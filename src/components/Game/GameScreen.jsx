@@ -9,6 +9,7 @@ import SettingsModal from '../UI/SettingsModal';
 import GameControls from './GameControls';
 import GamePanel from './GamePanel';
 import GameMonitor from './GameMonitor';
+import TutorialScreen from '../Tutorial/TutorialScreen'; // Import TutorialScreen
 
 // ================== CYBER GAMING BACKGROUND DECOR ==================
 const ThemeDecorations = ({ theme, lowEffects, fxDensity }) => {
@@ -247,7 +248,6 @@ const ThemeDecorations = ({ theme, lowEffects, fxDensity }) => {
 };
 
 // ================== GAME SCREEN ==================
-// 1. CHÚ Ý: Đã thêm onGoGuide vào props ở đây
 const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
   const gameLevels = levels.filter((lvl) => lvl.difficulty === difficulty);
 
@@ -257,6 +257,9 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
   const [theme, setTheme] = useState('dark');
   const [hideUI, setHideUI] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // State mới để điều khiển Overlay Hướng dẫn
+  const [showGuide, setShowGuide] = useState(false);
 
   const [enableBlur, setEnableBlur] = useState(true);
   const [enableSound, setEnableSound] = useState(true);
@@ -297,10 +300,10 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
     };
   }, []);
 
-  // 2. HÀM XỬ LÝ CHUYỂN TRANG
+  // Xử lý mở Guide: Thay vì gọi prop onGoGuide (chuyển trang), ta bật Overlay
   const handleOpenGuide = () => {
     setShowSettings(false); 
-    if (onGoGuide) onGoGuide();
+    setShowGuide(true);
   };
 
   const resetCharacter = () => {
@@ -369,7 +372,8 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
   };
 
   const handleBlockClick = (blockId) => {
-    if (lives <= 0 || modal || showSettings) return;
+    // Thêm điều kiện: Không nhận click khi đang mở Guide
+    if (lives <= 0 || modal || showSettings || showGuide) return;
     const selectedBlock = currentLevel.options.find((opt) => opt.id === blockId);
     if (!selectedBlock) return;
     const isCorrect = blockId === currentLevel.correctBlockId;
@@ -468,12 +472,32 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
       </AnimatePresence>
 
       <AnimatePresence>
+        {/* OVERLAY HƯỚNG DẪN */}
+        {showGuide && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center">
+            {/* Backdrop tối mờ */}
+            <motion.div
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+               onClick={() => setShowGuide(false)}
+            />
+            {/* Nội dung Guide */}
+            <div className="relative z-10 w-full h-full pointer-events-none">
+              {/* Truyền prop isOverlay vào TutorialScreen để ẩn nút Home nếu cần */}
+              <div className="flex items-center justify-center w-full h-full pointer-events-auto p-4">
+                 <div className="w-full max-w-[90vw] h-[90vh]">
+                     <TutorialScreen onBack={() => setShowGuide(false)} isOverlay={true} />
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showSettings && (
           <SettingsModal
             onClose={() => setShowSettings(false)}
-            // 3. GẮN HÀM MỞ GUIDE VÀO ĐÂY
             onHome={onBack}
-            onOpenGuide={handleOpenGuide}
+            onOpenGuide={handleOpenGuide} // Sử dụng hàm local để mở overlay
             isBlur={enableBlur} toggleBlur={() => setEnableBlur((v) => !v)}
             isSound={enableSound} toggleSound={() => setEnableSound((v) => !v)}
             isLowEffects={lowEffects} toggleLowEffects={() => setLowEffects((v) => !v)}
@@ -484,7 +508,7 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
           <ResultModal
             type={modal.type} message={modal.message} theme={theme} stats={stats}
             onHome={onBack} onReplay={restartGame}
-            onOpenSettings={() => { setModal(null); setShowSettings(true); }}
+            onOpenSettings={() => { setShowSettings(true); }}
           />
         )}
       </AnimatePresence>

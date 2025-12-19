@@ -218,7 +218,7 @@ const SettingsModal = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
         
         {/* Backdrop: Blur & Dark Overlay */}
         <motion.div 
