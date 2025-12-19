@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Stage = ({ x, y, rotation, status, characterId, speechText }) => {
+const Stage = ({ x, y, rotation, status, characterId, speechText, visible = true, scale = 1 }) => {
   
   const CHAR_CONFIG = {
     pink: { idle: { fileName: 'Pink_Monster_Idle_4.png', frames: 4 }, move: { fileName: 'Pink_Monster_Run_6.png', frames: 6 }, hurt: { fileName: 'Pink_Monster_Hurt_4.png', frames: 4 }, death: { fileName: 'Pink_Monster_Death_8.png', frames: 8 } },
@@ -40,7 +40,7 @@ const Stage = ({ x, y, rotation, status, characterId, speechText }) => {
           bottom: '18%', 
           left: '50%',
           // Thêm độ nảy (scale) khi di chuyển
-          transform: `translate(calc(-50% + ${x}px), calc(0% + ${y}px)) rotate(${rotation - 90}deg) ${isMoving ? 'scale(1.1)' : 'scale(1)'}`,
+          transform: `translate(calc(-50% + ${x}px), calc(0% + ${y * -1}px)) rotate(${rotation - 90}deg) ${isMoving ? 'scale(1.1)' : 'scale(1)'}`,
           opacity: status === 'death' ? 0.8 : 1,
           filter: status === 'death' ? 'grayscale(100%)' : 'none'
         }}
