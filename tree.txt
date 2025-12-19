@@ -1,278 +1,515 @@
-.
-|-- .gitignore
-|-- .idea
-|   |-- .gitignore
-|   |-- inspectionProfiles
+﻿.
++-- .idea
+|   +-- inspectionProfiles
 |   |   +-- profiles_settings.xml
-|   |-- misc.xml
-|   |-- modules.xml
-|   |-- ScatchGameStudy.iml
+|   +-- .gitignore
+|   +-- misc.xml
+|   +-- modules.xml
+|   +-- ScatchGameStudy.iml
 |   +-- workspace.xml
-|-- index.html
-|-- package.json
-|-- package-lock.json
-|-- postcss.config.js
-|-- public
-|   |-- assets
-|   |   |-- images
-|   |   |   |-- BasicUI
++-- dist
+|   +-- assets
+|   |   +-- images
+|   |   |   +-- BasicUI
 |   |   |   |   +-- Sprout Lands - UI Pack - Basic pack
-|   |   |   |       |-- emojis-free
-|   |   |   |       |   |-- emoji style ui
-|   |   |   |       |   |   |-- Inventory_Blocks_Spritesheet.png
-|   |   |   |       |   |   |-- inventory_example.png
-|   |   |   |       |   |   |-- inventory_example_2.png
-|   |   |   |       |   |   |-- inventory_example_with_slots.png
-|   |   |   |       |   |   |-- inventory_example_with_slots_2.png
-|   |   |   |       |   |   |-- Inventory_Herat_Spritesheet.png
-|   |   |   |       |   |   |-- inventory_Light_example.png
-|   |   |   |       |   |   |-- inventory_Light_example_2.png
-|   |   |   |       |   |   |-- inventory_Light_example_with_slots.png
-|   |   |   |       |   |   |-- Inventory_Light_example_with_slots_2.png
-|   |   |   |       |   |   |-- Inventory_Light_Herat_Spritesheet.png
-|   |   |   |       |   |   |-- Inventory_Spritesheet.png
-|   |   |   |       |   |   +-- weather
-|   |   |   |       |   |       |-- Weather_Icons_smal_freel.png
-|   |   |   |       |   |       +-- Weather_UI_Free.png
-|   |   |   |       |   |-- Emoji_Spritesheet_Free.png
-|   |   |   |       |   +-- speech_bubble_grey.png
-|   |   |   |       |-- fonts
-|   |   |   |       |   |-- pixelFont-7-8x14-sproutLands.ttf
-|   |   |   |       |   |-- pixel-letters-7-8x14.png
-|   |   |   |       |   +-- pixel-letters-7-8x14-preview.png
-|   |   |   |       |-- read_me.txt
-|   |   |   |       +-- Sprite sheets
-|   |   |   |           |-- buttons
-|   |   |   |           |   |-- Small Square Buttons.png
-|   |   |   |           |   |-- Square Buttons 19x26.png
-|   |   |   |           |   |-- Square Buttons 26x19.png
-|   |   |   |           |   +-- Square Buttons 26x26.png
-|   |   |   |           |-- Dialouge UI
-|   |   |   |           |   |-- dialog box big.png
-|   |   |   |           |   |-- dialog box character finished talking click to continue indicator - spritesheet .png
-|   |   |   |           |   |-- dialog box medium.png
-|   |   |   |           |   |-- dialog box small.png
-|   |   |   |           |   |-- dialog box.png
-|   |   |   |           |   |-- Emotes
-|   |   |   |           |   |   +-- Teemo Basic emote animations sprite sheet.png
-|   |   |   |           |   |-- Premade dialog box  big.png
-|   |   |   |           |   |-- Premade dialog box medium.png
-|   |   |   |           |   +-- Premade dialog box small.png
-|   |   |   |           |-- Icons
-|   |   |   |           |   |-- All Icons.png
-|   |   |   |           |   |-- special icons
-|   |   |   |           |   |   |-- Small Happines-Sadness icons.png
-|   |   |   |           |   |   +-- Special Icons.png
-|   |   |   |           |   +-- white icons.png
-|   |   |   |           |-- Mouse sprites
-|   |   |   |           |   |-- Catpaw holding Mouse icon.png
-|   |   |   |           |   |-- Catpaw Mouse icon.png
-|   |   |   |           |   |-- Catpaw pointing Mouse icon.png
-|   |   |   |           |   |-- Triangle Mouse icon 1.png
-|   |   |   |           |   |-- Triangle Mouse icon 2.png
-|   |   |   |           |   +-- Triangle Mouse icon 3.png
-|   |   |   |           |-- Setting menu.png
-|   |   |   |           |-- Sprite sheet for Basic Pack.png
-|   |   |   |           |-- UI Big Play Button.png
-|   |   |   |           +-- UI Settings Buttons.png
-|   |   |   |-- bg-stage.png
-|   |   |   |-- bg-stage1.png
-|   |   |   |-- characters
-|   |   |   |   |-- __MACOSX
-|   |   |   |   |   |-- ._1 Pink_Monster
-|   |   |   |   |   |-- ._2 Owlet_Monster
-|   |   |   |   |   |-- ._3 Dude_Monster
-|   |   |   |   |   |-- ._COUPON.pdf
-|   |   |   |   |   |-- ._COUPON.png
-|   |   |   |   |   |-- ._Font
-|   |   |   |   |   |-- ._Free Assets Craftpix!.url
-|   |   |   |   |   |-- ._license.txt
-|   |   |   |   |   |-- 1 Pink_Monster
-|   |   |   |   |   |   |-- ._Double_Jump_Dust_5.png
-|   |   |   |   |   |   |-- ._Pink_Monster.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Attack1_4.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Attack2_6.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Climb_4.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Death_8.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Hurt_4.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Idle_4.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Jump_8.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Push_6.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Run_6.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Throw_4.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Walk_6.png
-|   |   |   |   |   |   |-- ._Pink_Monster_Walk+Attack_6.png
-|   |   |   |   |   |   |-- ._Rock1.png
-|   |   |   |   |   |   |-- ._Rock2.png
-|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
-|   |   |   |   |   |-- 2 Owlet_Monster
-|   |   |   |   |   |   |-- ._Double_Jump_Dust_5.png
-|   |   |   |   |   |   |-- ._Owlet_Monster.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Attack1_4.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Attack2_6.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Climb_4.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Death_8.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Hurt_4.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Idle_4.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Jump_8.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Push_6.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Run_6.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Throw_4.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Walk_6.png
-|   |   |   |   |   |   |-- ._Owlet_Monster_Walk+Attack_6.png
-|   |   |   |   |   |   |-- ._Rock1.png
-|   |   |   |   |   |   |-- ._Rock2.png
-|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
-|   |   |   |   |   |-- 3 Dude_Monster
-|   |   |   |   |   |   |-- ._Double_Jump_Dust_5.png
-|   |   |   |   |   |   |-- ._Dude_Monster.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Attack1_4.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Attack2_6.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Climb_4.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Death_8.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Hurt_4.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Idle_4.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Jump_8.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Push_6.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Run_6.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Throw_4.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Walk_6.png
-|   |   |   |   |   |   |-- ._Dude_Monster_Walk+Attack_6.png
-|   |   |   |   |   |   |-- ._Rock1.png
-|   |   |   |   |   |   |-- ._Rock2.png
-|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
-|   |   |   |   |   +-- Font
-|   |   |   |   |       +-- ._Planes_ValMore.ttf
-|   |   |   |   |-- Character.png
-|   |   |   |   |-- COUPON.pdf
-|   |   |   |   |-- COUPON.png
-|   |   |   |   |-- dude
-|   |   |   |   |   |-- Double_Jump_Dust_5.png
-|   |   |   |   |   |-- Dude_Monster.png
-|   |   |   |   |   |-- Dude_Monster_Attack1_4.png
-|   |   |   |   |   |-- Dude_Monster_Attack2_6.png
-|   |   |   |   |   |-- Dude_Monster_Climb_4.png
-|   |   |   |   |   |-- Dude_Monster_Death_8.png
-|   |   |   |   |   |-- Dude_Monster_Hurt_4.png
-|   |   |   |   |   |-- Dude_Monster_Idle_4.png
-|   |   |   |   |   |-- Dude_Monster_Jump_8.png
-|   |   |   |   |   |-- Dude_Monster_Push_6.png
-|   |   |   |   |   |-- Dude_Monster_Run_6.png
-|   |   |   |   |   |-- Dude_Monster_Throw_4.png
-|   |   |   |   |   |-- Dude_Monster_Walk_6.png
-|   |   |   |   |   |-- Dude_Monster_Walk+Attack_6.png
-|   |   |   |   |   |-- Rock1.png
-|   |   |   |   |   |-- Rock2.png
+|   |   |   |   |   +-- emojis-free
+|   |   |   |   |   |   +-- emoji style ui
+|   |   |   |   |   |   |   +-- weather
+|   |   |   |   |   |   |   |   +-- Weather_Icons_smal_freel.png
+|   |   |   |   |   |   |   |   +-- Weather_UI_Free.png
+|   |   |   |   |   |   |   +-- Inventory_Blocks_Spritesheet.png
+|   |   |   |   |   |   |   +-- inventory_example.png
+|   |   |   |   |   |   |   +-- inventory_example_2.png
+|   |   |   |   |   |   |   +-- inventory_example_with_slots.png
+|   |   |   |   |   |   |   +-- inventory_example_with_slots_2.png
+|   |   |   |   |   |   |   +-- Inventory_Herat_Spritesheet.png
+|   |   |   |   |   |   |   +-- inventory_Light_example.png
+|   |   |   |   |   |   |   +-- inventory_Light_example_2.png
+|   |   |   |   |   |   |   +-- inventory_Light_example_with_slots.png
+|   |   |   |   |   |   |   +-- Inventory_Light_example_with_slots_2.png
+|   |   |   |   |   |   |   +-- Inventory_Light_Herat_Spritesheet.png
+|   |   |   |   |   |   |   +-- Inventory_Spritesheet.png
+|   |   |   |   |   |   +-- Emoji_Spritesheet_Free.png
+|   |   |   |   |   |   +-- speech_bubble_grey.png
+|   |   |   |   |   +-- fonts
+|   |   |   |   |   |   +-- pixel-letters-7-8x14-preview.png
+|   |   |   |   |   |   +-- pixel-letters-7-8x14.png
+|   |   |   |   |   |   +-- pixelFont-7-8x14-sproutLands.ttf
+|   |   |   |   |   +-- Sprite sheets
+|   |   |   |   |   |   +-- buttons
+|   |   |   |   |   |   |   +-- Small Square Buttons.png
+|   |   |   |   |   |   |   +-- Square Buttons 19x26.png
+|   |   |   |   |   |   |   +-- Square Buttons 26x19.png
+|   |   |   |   |   |   |   +-- Square Buttons 26x26.png
+|   |   |   |   |   |   +-- Dialouge UI
+|   |   |   |   |   |   |   +-- Emotes
+|   |   |   |   |   |   |   |   +-- Teemo Basic emote animations sprite sheet.png
+|   |   |   |   |   |   |   +-- dialog box big.png
+|   |   |   |   |   |   |   +-- dialog box character finished talking click to continue indicator - spritesheet .png
+|   |   |   |   |   |   |   +-- dialog box medium.png
+|   |   |   |   |   |   |   +-- dialog box small.png
+|   |   |   |   |   |   |   +-- dialog box.png
+|   |   |   |   |   |   |   +-- Premade dialog box  big.png
+|   |   |   |   |   |   |   +-- Premade dialog box medium.png
+|   |   |   |   |   |   |   +-- Premade dialog box small.png
+|   |   |   |   |   |   +-- Icons
+|   |   |   |   |   |   |   +-- special icons
+|   |   |   |   |   |   |   |   +-- Small Happines-Sadness icons.png
+|   |   |   |   |   |   |   |   +-- Special Icons.png
+|   |   |   |   |   |   |   +-- All Icons.png
+|   |   |   |   |   |   |   +-- white icons.png
+|   |   |   |   |   |   +-- Mouse sprites
+|   |   |   |   |   |   |   +-- Catpaw holding Mouse icon.png
+|   |   |   |   |   |   |   +-- Catpaw Mouse icon.png
+|   |   |   |   |   |   |   +-- Catpaw pointing Mouse icon.png
+|   |   |   |   |   |   |   +-- Triangle Mouse icon 1.png
+|   |   |   |   |   |   |   +-- Triangle Mouse icon 2.png
+|   |   |   |   |   |   |   +-- Triangle Mouse icon 3.png
+|   |   |   |   |   |   +-- Setting menu.png
+|   |   |   |   |   |   +-- Sprite sheet for Basic Pack.png
+|   |   |   |   |   |   +-- UI Big Play Button.png
+|   |   |   |   |   |   +-- UI Settings Buttons.png
+|   |   |   |   |   +-- read_me.txt
+|   |   |   +-- characters
+|   |   |   |   +-- dude
+|   |   |   |   |   +-- Double_Jump_Dust_5.png
+|   |   |   |   |   +-- Dude_Monster.png
+|   |   |   |   |   +-- Dude_Monster_Attack1_4.png
+|   |   |   |   |   +-- Dude_Monster_Attack2_6.png
+|   |   |   |   |   +-- Dude_Monster_Climb_4.png
+|   |   |   |   |   +-- Dude_Monster_Death_8.png
+|   |   |   |   |   +-- Dude_Monster_Hurt_4.png
+|   |   |   |   |   +-- Dude_Monster_Idle_4.png
+|   |   |   |   |   +-- Dude_Monster_Jump_8.png
+|   |   |   |   |   +-- Dude_Monster_Push_6.png
+|   |   |   |   |   +-- Dude_Monster_Run_6.png
+|   |   |   |   |   +-- Dude_Monster_Throw_4.png
+|   |   |   |   |   +-- Dude_Monster_Walk+Attack_6.png
+|   |   |   |   |   +-- Dude_Monster_Walk_6.png
+|   |   |   |   |   +-- Rock1.png
+|   |   |   |   |   +-- Rock2.png
 |   |   |   |   |   +-- Walk_Run_Push_Dust_6.png
-|   |   |   |   |-- Font
+|   |   |   |   +-- Font
 |   |   |   |   |   +-- Planes_ValMore.ttf
-|   |   |   |   |-- Forest_Monsters_FREE.zip
-|   |   |   |   |-- Free Assets Craftpix!.url
-|   |   |   |   |-- license.txt
-|   |   |   |   |-- owlet
-|   |   |   |   |   |-- Double_Jump_Dust_5.png
-|   |   |   |   |   |-- Owlet_Monster.png
-|   |   |   |   |   |-- Owlet_Monster_Attack1_4.png
-|   |   |   |   |   |-- Owlet_Monster_Attack2_6.png
-|   |   |   |   |   |-- Owlet_Monster_Climb_4.png
-|   |   |   |   |   |-- Owlet_Monster_Death_8.png
-|   |   |   |   |   |-- Owlet_Monster_Hurt_4.png
-|   |   |   |   |   |-- Owlet_Monster_Idle_4.png
-|   |   |   |   |   |-- Owlet_Monster_Jump_8.png
-|   |   |   |   |   |-- Owlet_Monster_Push_6.png
-|   |   |   |   |   |-- Owlet_Monster_Run_6.png
-|   |   |   |   |   |-- Owlet_Monster_Throw_4.png
-|   |   |   |   |   |-- Owlet_Monster_Walk_6.png
-|   |   |   |   |   |-- Owlet_Monster_Walk+Attack_6.png
-|   |   |   |   |   |-- Rock1.png
-|   |   |   |   |   |-- Rock2.png
+|   |   |   |   +-- owlet
+|   |   |   |   |   +-- Double_Jump_Dust_5.png
+|   |   |   |   |   +-- Owlet_Monster.png
+|   |   |   |   |   +-- Owlet_Monster_Attack1_4.png
+|   |   |   |   |   +-- Owlet_Monster_Attack2_6.png
+|   |   |   |   |   +-- Owlet_Monster_Climb_4.png
+|   |   |   |   |   +-- Owlet_Monster_Death_8.png
+|   |   |   |   |   +-- Owlet_Monster_Hurt_4.png
+|   |   |   |   |   +-- Owlet_Monster_Idle_4.png
+|   |   |   |   |   +-- Owlet_Monster_Jump_8.png
+|   |   |   |   |   +-- Owlet_Monster_Push_6.png
+|   |   |   |   |   +-- Owlet_Monster_Run_6.png
+|   |   |   |   |   +-- Owlet_Monster_Throw_4.png
+|   |   |   |   |   +-- Owlet_Monster_Walk+Attack_6.png
+|   |   |   |   |   +-- Owlet_Monster_Walk_6.png
+|   |   |   |   |   +-- Rock1.png
+|   |   |   |   |   +-- Rock2.png
 |   |   |   |   |   +-- Walk_Run_Push_Dust_6.png
 |   |   |   |   +-- pink
-|   |   |   |       |-- Double_Jump_Dust_5.png
-|   |   |   |       |-- Pink_Monster.png
-|   |   |   |       |-- Pink_Monster_Attack1_4.png
-|   |   |   |       |-- Pink_Monster_Attack2_6.png
-|   |   |   |       |-- Pink_Monster_Climb_4.png
-|   |   |   |       |-- Pink_Monster_Death_8.png
-|   |   |   |       |-- Pink_Monster_Hurt_4.png
-|   |   |   |       |-- Pink_Monster_Idle_4.png
-|   |   |   |       |-- Pink_Monster_Jump_8.png
-|   |   |   |       |-- Pink_Monster_Push_6.png
-|   |   |   |       |-- Pink_Monster_Run_6.png
-|   |   |   |       |-- Pink_Monster_Throw_4.png
-|   |   |   |       |-- Pink_Monster_Walk_6.png
-|   |   |   |       |-- Pink_Monster_Walk+Attack_6.png
-|   |   |   |       |-- Rock1.png
-|   |   |   |       |-- Rock2.png
-|   |   |   |       +-- Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- Double_Jump_Dust_5.png
+|   |   |   |   |   +-- Pink_Monster.png
+|   |   |   |   |   +-- Pink_Monster_Attack1_4.png
+|   |   |   |   |   +-- Pink_Monster_Attack2_6.png
+|   |   |   |   |   +-- Pink_Monster_Climb_4.png
+|   |   |   |   |   +-- Pink_Monster_Death_8.png
+|   |   |   |   |   +-- Pink_Monster_Hurt_4.png
+|   |   |   |   |   +-- Pink_Monster_Idle_4.png
+|   |   |   |   |   +-- Pink_Monster_Jump_8.png
+|   |   |   |   |   +-- Pink_Monster_Push_6.png
+|   |   |   |   |   +-- Pink_Monster_Run_6.png
+|   |   |   |   |   +-- Pink_Monster_Throw_4.png
+|   |   |   |   |   +-- Pink_Monster_Walk+Attack_6.png
+|   |   |   |   |   +-- Pink_Monster_Walk_6.png
+|   |   |   |   |   +-- Rock1.png
+|   |   |   |   |   +-- Rock2.png
+|   |   |   |   |   +-- Walk_Run_Push_Dust_6.png
+|   |   |   |   +-- __MACOSX
+|   |   |   |   |   +-- 1 Pink_Monster
+|   |   |   |   |   |   +-- ._Double_Jump_Dust_5.png
+|   |   |   |   |   |   +-- ._Pink_Monster.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Attack1_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Attack2_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Climb_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Death_8.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Hurt_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Idle_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Jump_8.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Push_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Run_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Throw_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Walk+Attack_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Walk_6.png
+|   |   |   |   |   |   +-- ._Rock1.png
+|   |   |   |   |   |   +-- ._Rock2.png
+|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- 2 Owlet_Monster
+|   |   |   |   |   |   +-- ._Double_Jump_Dust_5.png
+|   |   |   |   |   |   +-- ._Owlet_Monster.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Attack1_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Attack2_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Climb_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Death_8.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Hurt_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Idle_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Jump_8.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Push_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Run_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Throw_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Walk+Attack_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Walk_6.png
+|   |   |   |   |   |   +-- ._Rock1.png
+|   |   |   |   |   |   +-- ._Rock2.png
+|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- 3 Dude_Monster
+|   |   |   |   |   |   +-- ._Double_Jump_Dust_5.png
+|   |   |   |   |   |   +-- ._Dude_Monster.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Attack1_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Attack2_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Climb_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Death_8.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Hurt_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Idle_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Jump_8.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Push_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Run_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Throw_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Walk+Attack_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Walk_6.png
+|   |   |   |   |   |   +-- ._Rock1.png
+|   |   |   |   |   |   +-- ._Rock2.png
+|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- Font
+|   |   |   |   |   |   +-- ._Planes_ValMore.ttf
+|   |   |   |   |   +-- ._1 Pink_Monster
+|   |   |   |   |   +-- ._2 Owlet_Monster
+|   |   |   |   |   +-- ._3 Dude_Monster
+|   |   |   |   |   +-- ._COUPON.pdf
+|   |   |   |   |   +-- ._COUPON.png
+|   |   |   |   |   +-- ._Font
+|   |   |   |   |   +-- ._Free Assets Craftpix!.url
+|   |   |   |   |   +-- ._license.txt
+|   |   |   |   +-- Character.png
+|   |   |   |   +-- COUPON.pdf
+|   |   |   |   +-- COUPON.png
+|   |   |   |   +-- Forest_Monsters_FREE.zip
+|   |   |   |   +-- Free Assets Craftpix!.url
+|   |   |   |   +-- license.txt
 |   |   |   +-- ui
-|   |   |       |-- block.png
-|   |   |       |-- block_move_left.png
-|   |   |       |-- block-labels.png
-|   |   |       |-- down.png
-|   |   |       |-- end.png
-|   |   |       |-- forever.png
-|   |   |       |-- gohome.png
-|   |   |       |-- grow.png
-|   |   |       |-- hide.png
-|   |   |       |-- hop.png
-|   |   |       |-- left.png
-|   |   |       |-- messagereceive.png
-|   |   |       |-- messagesend.png
-|   |   |       |-- onbump.png
-|   |   |       |-- onflag.png
-|   |   |       |-- ontap.png
-|   |   |       |-- page.png
-|   |   |       |-- playsound.png
-|   |   |       |-- pop.png
-|   |   |       |-- repeat.png
-|   |   |       |-- reset.png
-|   |   |       |-- right.png
-|   |   |       |-- say.png
-|   |   |       |-- show.png
-|   |   |       |-- shrink.png
-|   |   |       |-- speed.png
-|   |   |       |-- stop.png
-|   |   |       |-- turnleft.png
-|   |   |       |-- turnright.png
-|   |   |       |-- up.png
-|   |   |       +-- wait.png
+|   |   |   |   +-- block-labels.png
+|   |   |   |   +-- block.png
+|   |   |   |   +-- block_move_left.png
+|   |   |   |   +-- down.png
+|   |   |   |   +-- end.png
+|   |   |   |   +-- forever.png
+|   |   |   |   +-- gohome.png
+|   |   |   |   +-- grow.png
+|   |   |   |   +-- hide.png
+|   |   |   |   +-- hop.png
+|   |   |   |   +-- left.png
+|   |   |   |   +-- messagereceive.png
+|   |   |   |   +-- messagesend.png
+|   |   |   |   +-- onbump.png
+|   |   |   |   +-- onflag.png
+|   |   |   |   +-- ontap.png
+|   |   |   |   +-- page.png
+|   |   |   |   +-- playsound.png
+|   |   |   |   +-- pop.png
+|   |   |   |   +-- repeat.png
+|   |   |   |   +-- reset.png
+|   |   |   |   +-- right.png
+|   |   |   |   +-- say.png
+|   |   |   |   +-- show.png
+|   |   |   |   +-- shrink.png
+|   |   |   |   +-- speed.png
+|   |   |   |   +-- stop.png
+|   |   |   |   +-- turnleft.png
+|   |   |   |   +-- turnright.png
+|   |   |   |   +-- up.png
+|   |   |   |   +-- wait.png
+|   |   |   +-- bg-stage.png
+|   |   |   +-- bg-stage1.png
 |   |   +-- sounds
-|   |       |-- pop.mp3
-|   |       +-- win.mp3
+|   |   |   +-- pop.mp3
+|   |   |   +-- win.mp3
+|   |   +-- index-BiPkZ6TZ.js
+|   |   +-- index-DkLoGsz2.css
 |   +-- favicon.ico
-|-- src
-|   |-- App.jsx
-|   |-- components
-|   |   |-- Block
+|   +-- index.html
++-- public
+|   +-- assets
+|   |   +-- images
+|   |   |   +-- BasicUI
+|   |   |   |   +-- Sprout Lands - UI Pack - Basic pack
+|   |   |   |   |   +-- emojis-free
+|   |   |   |   |   |   +-- emoji style ui
+|   |   |   |   |   |   |   +-- weather
+|   |   |   |   |   |   |   |   +-- Weather_Icons_smal_freel.png
+|   |   |   |   |   |   |   |   +-- Weather_UI_Free.png
+|   |   |   |   |   |   |   +-- Inventory_Blocks_Spritesheet.png
+|   |   |   |   |   |   |   +-- inventory_example.png
+|   |   |   |   |   |   |   +-- inventory_example_2.png
+|   |   |   |   |   |   |   +-- inventory_example_with_slots.png
+|   |   |   |   |   |   |   +-- inventory_example_with_slots_2.png
+|   |   |   |   |   |   |   +-- Inventory_Herat_Spritesheet.png
+|   |   |   |   |   |   |   +-- inventory_Light_example.png
+|   |   |   |   |   |   |   +-- inventory_Light_example_2.png
+|   |   |   |   |   |   |   +-- inventory_Light_example_with_slots.png
+|   |   |   |   |   |   |   +-- Inventory_Light_example_with_slots_2.png
+|   |   |   |   |   |   |   +-- Inventory_Light_Herat_Spritesheet.png
+|   |   |   |   |   |   |   +-- Inventory_Spritesheet.png
+|   |   |   |   |   |   +-- Emoji_Spritesheet_Free.png
+|   |   |   |   |   |   +-- speech_bubble_grey.png
+|   |   |   |   |   +-- fonts
+|   |   |   |   |   |   +-- pixel-letters-7-8x14-preview.png
+|   |   |   |   |   |   +-- pixel-letters-7-8x14.png
+|   |   |   |   |   |   +-- pixelFont-7-8x14-sproutLands.ttf
+|   |   |   |   |   +-- Sprite sheets
+|   |   |   |   |   |   +-- buttons
+|   |   |   |   |   |   |   +-- Small Square Buttons.png
+|   |   |   |   |   |   |   +-- Square Buttons 19x26.png
+|   |   |   |   |   |   |   +-- Square Buttons 26x19.png
+|   |   |   |   |   |   |   +-- Square Buttons 26x26.png
+|   |   |   |   |   |   +-- Dialouge UI
+|   |   |   |   |   |   |   +-- Emotes
+|   |   |   |   |   |   |   |   +-- Teemo Basic emote animations sprite sheet.png
+|   |   |   |   |   |   |   +-- dialog box big.png
+|   |   |   |   |   |   |   +-- dialog box character finished talking click to continue indicator - spritesheet .png
+|   |   |   |   |   |   |   +-- dialog box medium.png
+|   |   |   |   |   |   |   +-- dialog box small.png
+|   |   |   |   |   |   |   +-- dialog box.png
+|   |   |   |   |   |   |   +-- Premade dialog box  big.png
+|   |   |   |   |   |   |   +-- Premade dialog box medium.png
+|   |   |   |   |   |   |   +-- Premade dialog box small.png
+|   |   |   |   |   |   +-- Icons
+|   |   |   |   |   |   |   +-- special icons
+|   |   |   |   |   |   |   |   +-- Small Happines-Sadness icons.png
+|   |   |   |   |   |   |   |   +-- Special Icons.png
+|   |   |   |   |   |   |   +-- All Icons.png
+|   |   |   |   |   |   |   +-- white icons.png
+|   |   |   |   |   |   +-- Mouse sprites
+|   |   |   |   |   |   |   +-- Catpaw holding Mouse icon.png
+|   |   |   |   |   |   |   +-- Catpaw Mouse icon.png
+|   |   |   |   |   |   |   +-- Catpaw pointing Mouse icon.png
+|   |   |   |   |   |   |   +-- Triangle Mouse icon 1.png
+|   |   |   |   |   |   |   +-- Triangle Mouse icon 2.png
+|   |   |   |   |   |   |   +-- Triangle Mouse icon 3.png
+|   |   |   |   |   |   +-- Setting menu.png
+|   |   |   |   |   |   +-- Sprite sheet for Basic Pack.png
+|   |   |   |   |   |   +-- UI Big Play Button.png
+|   |   |   |   |   |   +-- UI Settings Buttons.png
+|   |   |   |   |   +-- read_me.txt
+|   |   |   +-- characters
+|   |   |   |   +-- dude
+|   |   |   |   |   +-- Double_Jump_Dust_5.png
+|   |   |   |   |   +-- Dude_Monster.png
+|   |   |   |   |   +-- Dude_Monster_Attack1_4.png
+|   |   |   |   |   +-- Dude_Monster_Attack2_6.png
+|   |   |   |   |   +-- Dude_Monster_Climb_4.png
+|   |   |   |   |   +-- Dude_Monster_Death_8.png
+|   |   |   |   |   +-- Dude_Monster_Hurt_4.png
+|   |   |   |   |   +-- Dude_Monster_Idle_4.png
+|   |   |   |   |   +-- Dude_Monster_Jump_8.png
+|   |   |   |   |   +-- Dude_Monster_Push_6.png
+|   |   |   |   |   +-- Dude_Monster_Run_6.png
+|   |   |   |   |   +-- Dude_Monster_Throw_4.png
+|   |   |   |   |   +-- Dude_Monster_Walk+Attack_6.png
+|   |   |   |   |   +-- Dude_Monster_Walk_6.png
+|   |   |   |   |   +-- Rock1.png
+|   |   |   |   |   +-- Rock2.png
+|   |   |   |   |   +-- Walk_Run_Push_Dust_6.png
+|   |   |   |   +-- Font
+|   |   |   |   |   +-- Planes_ValMore.ttf
+|   |   |   |   +-- owlet
+|   |   |   |   |   +-- Double_Jump_Dust_5.png
+|   |   |   |   |   +-- Owlet_Monster.png
+|   |   |   |   |   +-- Owlet_Monster_Attack1_4.png
+|   |   |   |   |   +-- Owlet_Monster_Attack2_6.png
+|   |   |   |   |   +-- Owlet_Monster_Climb_4.png
+|   |   |   |   |   +-- Owlet_Monster_Death_8.png
+|   |   |   |   |   +-- Owlet_Monster_Hurt_4.png
+|   |   |   |   |   +-- Owlet_Monster_Idle_4.png
+|   |   |   |   |   +-- Owlet_Monster_Jump_8.png
+|   |   |   |   |   +-- Owlet_Monster_Push_6.png
+|   |   |   |   |   +-- Owlet_Monster_Run_6.png
+|   |   |   |   |   +-- Owlet_Monster_Throw_4.png
+|   |   |   |   |   +-- Owlet_Monster_Walk+Attack_6.png
+|   |   |   |   |   +-- Owlet_Monster_Walk_6.png
+|   |   |   |   |   +-- Rock1.png
+|   |   |   |   |   +-- Rock2.png
+|   |   |   |   |   +-- Walk_Run_Push_Dust_6.png
+|   |   |   |   +-- pink
+|   |   |   |   |   +-- Double_Jump_Dust_5.png
+|   |   |   |   |   +-- Pink_Monster.png
+|   |   |   |   |   +-- Pink_Monster_Attack1_4.png
+|   |   |   |   |   +-- Pink_Monster_Attack2_6.png
+|   |   |   |   |   +-- Pink_Monster_Climb_4.png
+|   |   |   |   |   +-- Pink_Monster_Death_8.png
+|   |   |   |   |   +-- Pink_Monster_Hurt_4.png
+|   |   |   |   |   +-- Pink_Monster_Idle_4.png
+|   |   |   |   |   +-- Pink_Monster_Jump_8.png
+|   |   |   |   |   +-- Pink_Monster_Push_6.png
+|   |   |   |   |   +-- Pink_Monster_Run_6.png
+|   |   |   |   |   +-- Pink_Monster_Throw_4.png
+|   |   |   |   |   +-- Pink_Monster_Walk+Attack_6.png
+|   |   |   |   |   +-- Pink_Monster_Walk_6.png
+|   |   |   |   |   +-- Rock1.png
+|   |   |   |   |   +-- Rock2.png
+|   |   |   |   |   +-- Walk_Run_Push_Dust_6.png
+|   |   |   |   +-- __MACOSX
+|   |   |   |   |   +-- 1 Pink_Monster
+|   |   |   |   |   |   +-- ._Double_Jump_Dust_5.png
+|   |   |   |   |   |   +-- ._Pink_Monster.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Attack1_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Attack2_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Climb_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Death_8.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Hurt_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Idle_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Jump_8.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Push_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Run_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Throw_4.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Walk+Attack_6.png
+|   |   |   |   |   |   +-- ._Pink_Monster_Walk_6.png
+|   |   |   |   |   |   +-- ._Rock1.png
+|   |   |   |   |   |   +-- ._Rock2.png
+|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- 2 Owlet_Monster
+|   |   |   |   |   |   +-- ._Double_Jump_Dust_5.png
+|   |   |   |   |   |   +-- ._Owlet_Monster.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Attack1_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Attack2_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Climb_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Death_8.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Hurt_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Idle_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Jump_8.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Push_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Run_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Throw_4.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Walk+Attack_6.png
+|   |   |   |   |   |   +-- ._Owlet_Monster_Walk_6.png
+|   |   |   |   |   |   +-- ._Rock1.png
+|   |   |   |   |   |   +-- ._Rock2.png
+|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- 3 Dude_Monster
+|   |   |   |   |   |   +-- ._Double_Jump_Dust_5.png
+|   |   |   |   |   |   +-- ._Dude_Monster.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Attack1_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Attack2_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Climb_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Death_8.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Hurt_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Idle_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Jump_8.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Push_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Run_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Throw_4.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Walk+Attack_6.png
+|   |   |   |   |   |   +-- ._Dude_Monster_Walk_6.png
+|   |   |   |   |   |   +-- ._Rock1.png
+|   |   |   |   |   |   +-- ._Rock2.png
+|   |   |   |   |   |   +-- ._Walk_Run_Push_Dust_6.png
+|   |   |   |   |   +-- Font
+|   |   |   |   |   |   +-- ._Planes_ValMore.ttf
+|   |   |   |   |   +-- ._1 Pink_Monster
+|   |   |   |   |   +-- ._2 Owlet_Monster
+|   |   |   |   |   +-- ._3 Dude_Monster
+|   |   |   |   |   +-- ._COUPON.pdf
+|   |   |   |   |   +-- ._COUPON.png
+|   |   |   |   |   +-- ._Font
+|   |   |   |   |   +-- ._Free Assets Craftpix!.url
+|   |   |   |   |   +-- ._license.txt
+|   |   |   |   +-- Character.png
+|   |   |   |   +-- COUPON.pdf
+|   |   |   |   +-- COUPON.png
+|   |   |   |   +-- Forest_Monsters_FREE.zip
+|   |   |   |   +-- Free Assets Craftpix!.url
+|   |   |   |   +-- license.txt
+|   |   |   +-- ui
+|   |   |   |   +-- block-labels.png
+|   |   |   |   +-- block.png
+|   |   |   |   +-- block_move_left.png
+|   |   |   |   +-- down.png
+|   |   |   |   +-- end.png
+|   |   |   |   +-- forever.png
+|   |   |   |   +-- gohome.png
+|   |   |   |   +-- grow.png
+|   |   |   |   +-- hide.png
+|   |   |   |   +-- hop.png
+|   |   |   |   +-- left.png
+|   |   |   |   +-- messagereceive.png
+|   |   |   |   +-- messagesend.png
+|   |   |   |   +-- onbump.png
+|   |   |   |   +-- onflag.png
+|   |   |   |   +-- ontap.png
+|   |   |   |   +-- page.png
+|   |   |   |   +-- playsound.png
+|   |   |   |   +-- pop.png
+|   |   |   |   +-- repeat.png
+|   |   |   |   +-- reset.png
+|   |   |   |   +-- right.png
+|   |   |   |   +-- say.png
+|   |   |   |   +-- show.png
+|   |   |   |   +-- shrink.png
+|   |   |   |   +-- speed.png
+|   |   |   |   +-- stop.png
+|   |   |   |   +-- turnleft.png
+|   |   |   |   +-- turnright.png
+|   |   |   |   +-- up.png
+|   |   |   |   +-- wait.png
+|   |   |   +-- bg-stage.png
+|   |   |   +-- bg-stage1.png
+|   |   +-- sounds
+|   |   |   +-- pop.mp3
+|   |   |   +-- win.mp3
+|   +-- favicon.ico
++-- src
+|   +-- components
+|   |   +-- Block
 |   |   |   +-- Block.jsx
-|   |   |-- Game
-|   |   |   |-- GameScreen.jsx
-|   |   |   |-- Stage.jsx
+|   |   +-- Game
+|   |   |   +-- GameControls.jsx
+|   |   |   +-- GameMonitor.jsx
+|   |   |   +-- GamePanel.jsx
+|   |   |   +-- GameScreen.jsx
+|   |   |   +-- Stage.jsx
 |   |   |   +-- Workspace.jsx
-|   |   |-- Menu
-|   |   |   |-- CharacterSelection.jsx
-|   |   |   |-- DifficultySelection.jsx
+|   |   +-- Menu
+|   |   |   +-- CharacterSelection.jsx
+|   |   |   +-- DifficultySelection.jsx
 |   |   |   +-- MainMenu.jsx
-|   |   |-- Tutorial
+|   |   +-- Tutorial
 |   |   |   +-- TutorialScreen.jsx
 |   |   +-- UI
-|   |       |-- Button.jsx
-|   |       |-- Heart.jsx
-|   |       |-- MouseTrail.jsx
-|   |       +-- ResultModal.jsx
-|   |-- data
-|   |   |-- levels
-|   |   |   |-- easy.js
-|   |   |   |-- hard.js
-|   |   |   |-- index.js
+|   |   |   +-- Button.jsx
+|   |   |   +-- Heart.jsx
+|   |   |   +-- MouseTrail.jsx
+|   |   |   +-- ResultModal.jsx
+|   |   |   +-- SettingsModal.jsx
+|   +-- data
+|   |   +-- levels
+|   |   |   +-- easy.js
+|   |   |   +-- hard.js
+|   |   |   +-- index.js
 |   |   |   +-- normal.js
 |   |   +-- tutorialData.js
-|   |-- index.css
-|   |-- main.jsx
 |   +-- utils
-|       |-- gameLogic.js
-|       +-- levelFactory.js
-|-- tailwind.config.js
-|-- tree.txt
+|   |   +-- gameLogic.js
+|   |   +-- levelFactory.js
+|   +-- App.jsx
+|   +-- index.css
+|   +-- main.jsx
++-- .gitignore
++-- autopush.bat
++-- index.html
++-- package-lock.json
++-- package.json
++-- postcss.config.js
++-- tailwind.config.js
++-- tree.txt
 +-- vite.config.js
