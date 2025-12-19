@@ -76,7 +76,7 @@ const MainMenu = ({ onStart, onTutorial, onGoHome, onGoGuide }) => {
           group relative w-full py-4 px-6 mb-3 
           border bg-[#0f172a]/60 backdrop-blur-sm 
           flex items-center justify-between overflow-hidden
-          transition-all duration-300 clip-path-slant
+          transition-all duration-300
           ${colorClasses[color] || colorClasses.cyan}
         `}
         style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}

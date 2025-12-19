@@ -40,7 +40,7 @@ const Stage = ({ x, y, rotation, status, characterId, speechText }) => {
           bottom: '18%', 
           left: '50%',
           // Thêm độ nảy (scale) khi di chuyển
-          transform: `translate(calc(-50% + ${x}px), calc(0% + ${y * -1}px)) rotate(${rotation - 90}deg) ${isMoving ? 'scale(1.1)' : 'scale(1)'}`,
+          transform: `translate(calc(-50% + ${x}px), calc(0% + ${y}px)) rotate(${rotation - 90}deg) ${isMoving ? 'scale(1.1)' : 'scale(1)'}`,
           opacity: status === 'death' ? 0.8 : 1,
           filter: status === 'death' ? 'grayscale(100%)' : 'none'
         }}
@@ -56,7 +56,19 @@ const Stage = ({ x, y, rotation, status, characterId, speechText }) => {
                     animation: `sprite-slide ${animSpeed} steps(${animData.frames}) infinite`
                 }}
                 onError={(e) => {
-                    if (!e.target.src.includes('Idle')) e.target.src = `/assets/images/characters/${safeId}/Pink_Monster_Idle_4.png`;
+                  const idleFileName = CHAR_CONFIG[safeId]?.idle?.fileName || CHAR_CONFIG.pink.idle.fileName;
+                  const pinkIdle = CHAR_CONFIG.pink.idle.fileName;
+
+                  // Check if we are already trying to load the current char idle
+                  if (e.target.src.includes(idleFileName)) {
+                      // If current char idle fails, try Pink monster idle (absolute path)
+                      if (!e.target.src.includes('pink/' + pinkIdle)) {
+                          e.target.src = `/assets/images/characters/pink/${pinkIdle}`;
+                      }
+                  } else {
+                      // If some other animation failed, try current char idle
+                      e.target.src = `/assets/images/characters/${safeId}/${idleFileName}`;
+                  }
                 }}
             />
         </div>
