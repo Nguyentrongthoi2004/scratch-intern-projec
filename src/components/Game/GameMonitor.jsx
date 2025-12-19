@@ -151,7 +151,10 @@ const GameMonitor = ({ isDark, difficulty, currentLevelIndex, characterState, ch
                     x={characterState.x} 
                     y={characterState.y} 
                     rotation={characterState.rotation} 
-                    status={characterState.status} 
+                    status={characterState.status}
+                    visible={characterState.visible}
+                    scale={characterState.scale}
+                    speechText={characterState.speechText}
                     characterId={characterId} 
                 />
               </div>

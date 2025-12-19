@@ -271,6 +271,9 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
     y: 0,
     rotation: 90,
     status: 'idle',
+    visible: true,
+    scale: 1,
+    speechText: null,
   });
 
   const [stats, setStats] = useState({
@@ -307,7 +310,15 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
   };
 
   const resetCharacter = () => {
-    setCharacterState({ x: 0, y: 0, rotation: 90, status: 'idle' });
+    setCharacterState({
+      x: 0,
+      y: 0,
+      rotation: 90,
+      status: 'idle',
+      visible: true,
+      scale: 1,
+      speechText: null
+    });
   };
 
   const restartGame = () => {
@@ -325,25 +336,117 @@ const GameScreen = ({ difficulty, onBack, characterId, onGoGuide }) => {
 
   const executeBlockAction = (blockText) => {
     setCharacterState((prev) => ({ ...prev, status: 'move' }));
-    if (blockText.includes('Move')) {
-      const steps = parseInt(blockText.match(/-?\d+/)?.[0]) || 10;
+
+    // Helper to clamp values
+    const clampX = (val) => Math.max(-460, Math.min(460, val));
+    const clampY = (val) => Math.max(-240, Math.min(240, val));
+
+    // Regex matchers
+    const matchMove = blockText.match(/Move (-?\d+) steps/);
+    const matchTurnRight = blockText.match(/Turn right (\d+) degrees/);
+    const matchTurnLeft = blockText.match(/Turn left (\d+) degrees/);
+    const matchPoint = blockText.match(/Point in direction (-?\d+)/);
+
+    const matchChangeX = blockText.match(/Change x by (-?\d+)/);
+    const matchChangeY = blockText.match(/Change y by (-?\d+)/);
+    const matchSetX = blockText.match(/Set x to (-?\d+)/);
+    // Note: Some blocks might say "Set x to 0" which regex catches.
+    // Need to handle edge cases if text varies slightly, but relying on 'easy.js' format.
+
+    const matchGoTo = blockText.match(/Go to x: (-?\d+) y: (-?\d+)/);
+    const matchSayTime = blockText.match(/Say (.+?) for (\d+) secs/);
+    const matchSay = blockText.match(/^Say (.+)$/); // Strict start to avoid matching 'Say ... for ...'
+    const matchThinkTime = blockText.match(/Think (.+?) for (\d+) secs/);
+    const matchThink = blockText.match(/^Think (.+)$/);
+
+    const matchChangeSize = blockText.match(/Change size by (-?\d+)/);
+    const matchSetSize = blockText.match(/Set size to (\d+)%/);
+
+    if (matchMove) {
+      const steps = parseInt(matchMove[1]);
       setCharacterState((prev) => {
         const rad = (prev.rotation - 90) * (Math.PI / 180);
+        // Scratch Y: Up is +Y. CSS Y (top-down) is +Y.
+        // Stage renders: translate(..., -y px). So if y is +10, Stage translates -10px (Up).
+        // Angle 0 (Up): rad=-90. cos=0, sin=-1.
+        // We want +Y.
+        // newX = x + cos * steps (0) -> No change.
+        // newY = y - sin * steps (y - (-1)*10 = y+10). Correct.
         return {
           ...prev,
-          x: prev.x + Math.cos(rad) * steps * 5,
-          y: prev.y + Math.sin(rad) * steps * 5,
+          x: clampX(prev.x + Math.cos(rad) * steps * 5),
+          y: clampY(prev.y - Math.sin(rad) * steps * 5),
         };
       });
-    } else if (blockText.includes('Turn right')) {
-      const degrees = parseInt(blockText.match(/\d+/)?.[0]) || 15;
+    } else if (matchTurnRight) {
+      const degrees = parseInt(matchTurnRight[1]);
       setCharacterState((prev) => ({ ...prev, rotation: prev.rotation + degrees }));
-    } else if (blockText.includes('Turn left')) {
-      const degrees = parseInt(blockText.match(/\d+/)?.[0]) || 15;
+    } else if (matchTurnLeft) {
+      const degrees = parseInt(matchTurnLeft[1]);
       setCharacterState((prev) => ({ ...prev, rotation: prev.rotation - degrees }));
-    } else if (blockText.includes('Go to x: 0 y: 0')) {
-      setCharacterState((prev) => ({ ...prev, x: 0, y: 0 }));
+    } else if (matchPoint) {
+      const degrees = parseInt(matchPoint[1]);
+      setCharacterState((prev) => ({ ...prev, rotation: degrees }));
+    } else if (matchChangeX) {
+      const val = parseInt(matchChangeX[1]);
+      setCharacterState((prev) => ({ ...prev, x: clampX(prev.x + val * 5) }));
+    } else if (matchChangeY) {
+      const val = parseInt(matchChangeY[1]);
+      // Change Y by 10 (Up) -> Increase Y
+      setCharacterState((prev) => ({ ...prev, y: clampY(prev.y + val * 5) }));
+    } else if (matchSetX) {
+      const val = parseInt(matchSetX[1]);
+      setCharacterState((prev) => ({ ...prev, x: clampX(val * 5) })); // *5 scaling to match steps
+    } else if (matchGoTo) {
+      const xVal = parseInt(matchGoTo[1]);
+      const yVal = parseInt(matchGoTo[2]);
+      setCharacterState((prev) => ({ ...prev, x: clampX(xVal), y: clampY(yVal) }));
+    } else if (blockText.includes('Go to random position')) {
+       // Random within bounds
+       const rX = Math.floor(Math.random() * 800) - 400;
+       const rY = Math.floor(Math.random() * 400) - 200;
+       setCharacterState((prev) => ({ ...prev, x: rX, y: rY }));
+    } else if (blockText.includes('Hide')) {
+       setCharacterState((prev) => ({ ...prev, visible: false }));
+    } else if (blockText.includes('Show')) {
+       setCharacterState((prev) => ({ ...prev, visible: true }));
+    } else if (matchChangeSize) {
+       const val = parseInt(matchChangeSize[1]);
+       setCharacterState((prev) => ({ ...prev, scale: Math.max(0.1, prev.scale + val / 100) }));
+    } else if (matchSetSize) {
+       const val = parseInt(matchSetSize[1]);
+       setCharacterState((prev) => ({ ...prev, scale: Math.max(0.1, val / 100) }));
+    } else if (matchSayTime || matchThinkTime) {
+       const match = matchSayTime || matchThinkTime;
+       const text = match[1];
+       const secs = parseInt(match[2]);
+       setCharacterState((prev) => ({ ...prev, speechText: text }));
+       setTimeout(() => {
+          setCharacterState((prev) => ({ ...prev, speechText: null }));
+       }, secs * 1000);
+    } else if (matchSay || matchThink) {
+       const match = matchSay || matchThink;
+       // Avoid matching 'Say ... for ...' again if logic falls through, but strict regex helps
+       if (!blockText.includes('secs')) {
+          setCharacterState((prev) => ({ ...prev, speechText: match[1] }));
+       }
+    } else {
+       // Fallback for generic 'Move 10 steps' if regex failed or other simple commands
+       // Previous logic handled generic 'Move' string check.
+       // Let's keep a simple fallback if no regex matched but 'Move' is in text
+       if (blockText.includes('Move') && !matchMove) {
+          const steps = parseInt(blockText.match(/-?\d+/)?.[0]) || 10;
+          setCharacterState((prev) => {
+            const rad = (prev.rotation - 90) * (Math.PI / 180);
+            return {
+              ...prev,
+              x: clampX(prev.x + Math.cos(rad) * steps * 5),
+              y: clampY(prev.y - Math.sin(rad) * steps * 5),
+            };
+          });
+       }
     }
+
     setTimeout(() => {
       setCharacterState((prev) => ({ ...prev, status: 'idle' }));
     }, 500);
