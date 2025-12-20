@@ -1,7 +1,7 @@
 // src/components/Game/GamePanel.jsx
 import React from 'react';
 import Block from '../Block/Block';
-import { IconHeart } from '../UI/Icons';
+import { IconHeart, IconEye, IconRocket, IconLightning } from '../UI/Icons';
 
 const GamePanel = React.memo(({
   theme,
@@ -13,6 +13,9 @@ const GamePanel = React.memo(({
   handleBlockClick,
   answerFeedback,
   onSkipFeedback,
+  powerUps,
+  handleUsePowerUp,
+  disabledOptions = []
 }) => {
   const isDark = theme === 'dark';
   const isInFeedback = !!answerFeedback;
@@ -21,6 +24,28 @@ const GamePanel = React.memo(({
   const frameShadow = isDark
     ? 'shadow-[0_18px_45px_rgba(0,0,0,0.75)]'
     : 'shadow-[0_18px_40px_rgba(15,23,42,0.35)]';
+
+  const PowerUpButton = ({ type, icon, count, colorClass, tooltip }) => (
+    <button
+      id={`btn-powerup-${type}`}
+      onClick={() => handleUsePowerUp(type)}
+      disabled={count <= 0 || isInFeedback}
+      className={`relative group flex flex-col items-center justify-center p-2 rounded-xl border border-white/10 transition-all
+        ${count > 0 && !isInFeedback ? 'hover:bg-white/5 active:scale-95 cursor-pointer' : 'opacity-40 grayscale cursor-not-allowed'}
+      `}
+      title={tooltip}
+    >
+      <div className={`p-2 rounded-full mb-1 ${colorClass} bg-opacity-20 shadow-lg`}>
+        {icon}
+      </div>
+      <span className="text-[9px] font-bold text-white tracking-wider">{count}</span>
+
+      {/* Tooltip */}
+      <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/80 text-[9px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+        {tooltip}
+      </span>
+    </button>
+  );
 
   return (
     // LỚP VIỀN NGOÀI CỦA TABLET
@@ -122,14 +147,6 @@ const GamePanel = React.memo(({
                 }}
               />
             </div>
-            <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400">
-              <span>
-                Bài {currentLevelIndex + 1}/{totalLevels}
-              </span>
-              <span className="opacity-70">
-                Hoàn thành mục tiêu để sang level mới
-              </span>
-            </div>
           </div>
 
           {/* VÙNG NỘI DUNG CUỘN – CỐ ĐỊNH CHIỀU CAO */}
@@ -137,8 +154,8 @@ const GamePanel = React.memo(({
             className={`flex flex-col space-y-5 pr-2 custom-scrollbar ${
               answerFeedback ? 'overflow-hidden' : 'overflow-y-auto'
             }`}
-            // Trừ sẵn chiều cao vùng nút "Tiếp tục"
-            style={{ height: 'calc(100% - 88px)' }}
+            // Reduced height to make room for PowerUps + Button
+            style={{ height: 'calc(100% - 150px)' }}
           >
             {/* Nhiệm vụ */}
             <div>
@@ -177,9 +194,13 @@ const GamePanel = React.memo(({
                 const isCorrectBlock =
                   answerFeedback && answerFeedback.correctId === opt.id;
                 const status = answerFeedback?.status;
+                const isDisabled = disabledOptions.includes(opt.id);
 
                 let extra = '';
-                if (answerFeedback) {
+                if (isDisabled) {
+                   extra = ' opacity-30 grayscale pointer-events-none border-dashed border-slate-700';
+                }
+                else if (answerFeedback) {
                   if (status === 'correct' && isSelected) {
                     extra =
                       ' border-emerald-400 bg-emerald-500/10 shadow-[0_0_25px_rgba(16,185,129,0.7)]';
@@ -196,11 +217,11 @@ const GamePanel = React.memo(({
                   <div
                     key={opt.id}
                     onClick={() =>
-                      !answerFeedback && handleBlockClick(opt.id)
+                      !answerFeedback && !isDisabled && handleBlockClick(opt.id)
                     }
                     className={`group relative flex items-center gap-4 rounded-2xl border-2 p-3 transition-all duration-200
                     ${
-                      answerFeedback
+                      answerFeedback || isDisabled
                         ? 'cursor-default'
                         : 'cursor-pointer hover:-translate-y-[1px] hover:translate-x-[2px] hover:shadow-[0_10px_24px_rgba(15,23,42,0.7)] active:translate-y-0 active:shadow-none'
                     }
@@ -233,7 +254,7 @@ const GamePanel = React.memo(({
                           {opt.type}
                         </span>
 
-                        {!answerFeedback && (
+                        {!answerFeedback && !isDisabled && (
                           <span
                             className={`translate-x-2 text-[10px] font-bold opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 ${
                               isDark ? 'text-cyan-400' : 'text-blue-500'
@@ -250,8 +271,37 @@ const GamePanel = React.memo(({
             </div>
           </div>
 
+          {/* POWER UPS AREA */}
+          <div className="mt-auto pt-2 pb-2 border-t border-slate-700/50 flex justify-center gap-4">
+             {powerUps && handleUsePowerUp && (
+               <>
+                 <PowerUpButton
+                    type="hint"
+                    icon={<IconEye className="w-5 h-5 text-yellow-300"/>}
+                    count={powerUps.hint}
+                    colorClass="bg-yellow-500"
+                    tooltip="Loại bỏ 1 đáp án sai (50/50)"
+                 />
+                 <PowerUpButton
+                    type="skip"
+                    icon={<IconRocket className="w-5 h-5 text-purple-300"/>}
+                    count={powerUps.skip}
+                    colorClass="bg-purple-500"
+                    tooltip="Bỏ qua màn này (Auto-Win)"
+                 />
+                 <PowerUpButton
+                    type="heal"
+                    icon={<IconHeart filled className="w-5 h-5 text-red-300"/>}
+                    count={powerUps.heal}
+                    colorClass="bg-red-500"
+                    tooltip="Hồi phục 1 mạng"
+                 />
+               </>
+             )}
+          </div>
+
           {/* VÙNG CHO NÚT TIẾP TỤC – CHIỀU CAO CỐ ĐỊNH */}
-          <div className="mt-3 h-[70px] flex items-center justify-center">
+          <div className="h-[50px] flex items-center justify-center">
             {answerFeedback && (
               <button
                 onClick={onSkipFeedback}

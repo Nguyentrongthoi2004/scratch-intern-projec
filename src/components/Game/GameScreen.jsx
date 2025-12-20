@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import anime from 'animejs';
 
 import { levels } from '../../data/levels';
 import ResultModal from '../UI/ResultModal';
@@ -78,33 +79,25 @@ const ThemeDecorations = React.memo(ThemeDecorationsComponent);
 ThemeDecorations.displayName = 'ThemeDecorations';
 
 // ================== GAME SCREEN ==================
-const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNextLevel, loadGame }) => {
+const GameScreen = ({
+  difficulty, onBack, characterId,
+  setUiScale, uiScale, onNextLevel, loadGame,
+  bgmVolume, setBgmVolume, sfxVolume, setSfxVolume, enableSound, setEnableSound
+}) => {
   
-  // State mới: Refresh Key dùng để ép buộc random lại level
   const [refreshKey, setRefreshKey] = useState(0);
-
-  // For saving level order
   const [levelOrder, setLevelOrder] = useState(null);
 
-  // LOGIC CHỌN LEVEL (ĐÃ SỬA: Thêm refreshKey vào dependency để random lại khi replay)
   const gameLevels = useMemo(() => {
     const allForDifficulty = levels.filter((lvl) => lvl.difficulty === difficulty);
-
-    // If we are loading a game and have a saved order
     if (loadGame && levelOrder && levelOrder.length > 0) {
-       // Reconstruct level list based on ID order
        const orderedLevels = levelOrder.map(id => allForDifficulty.find(l => l.id === id)).filter(Boolean);
-       if (orderedLevels.length === levelOrder.length) {
-         return orderedLevels;
-       }
+       if (orderedLevels.length === levelOrder.length) return orderedLevels;
     }
-
-    // Xáo trộn mảng câu hỏi thật sự
     const shuffled = [...allForDifficulty].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 10);
-  }, [difficulty, refreshKey, levelOrder, loadGame]); // <-- QUAN TRỌNG: refreshKey thay đổi sẽ kích hoạt shuffle lại
+  }, [difficulty, refreshKey, levelOrder, loadGame]);
 
-  // --- STATE QUẢN LÝ ---
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [lives, setLives] = useState(5);
   const [modal, setModal] = useState(null);
@@ -113,22 +106,17 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
   const [showSettings, setShowSettings] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
-  // Detailed Score Tracking for "Metroidvania" progression
   const [scoreDetails, setScoreDetails] = useState({ easy: 0, normal: 0, hard: 0 });
   const [isGoldenWin, setIsGoldenWin] = useState(false);
-  const [wrongAnswers, setWrongAnswers] = useState([]); // List of level objects
+  const [wrongAnswers, setWrongAnswers] = useState([]);
   const [isReviewMode, setIsReviewMode] = useState(false);
 
   const [enableBlur, setEnableBlur] = useState(true);
-  const [enableSound, setEnableSound] = useState(true);
   const [lowEffects, setLowEffects] = useState(false);
   const [fxDensity, setFxDensity] = useState(60);
 
-  // State Thời gian giới hạn (30s)
   const INITIAL_TIME = 30;
   const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
-
-  // State Nhân vật (Khai báo Friend và Active ID mới)
   const [activeCharacterId, setActiveCharacterId] = useState(characterId || 'pink');
   
   const [characterState, setCharacterState] = useState({
@@ -139,10 +127,10 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     visible: true,
     scale: 1,
     speechText: null,
-    speed: 1,       // Tốc độ animation
-    waitTimer: null, // Số giây đang đếm ngược của lệnh Wait
-    isWaiting: false, // Cờ báo hiệu đang trong trạng thái Wait
-    friend: null    // Thông tin nhân vật bạn bè (random xuất hiện)
+    speed: 1,
+    waitTimer: null,
+    isWaiting: false,
+    friend: null
   });
 
   const [stats, setStats] = useState({
@@ -151,21 +139,18 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     total: gameLevels.length,
   });
 
-  // AUDIO VOLUME STATE
-  const [bgmVolume, setBgmVolume] = useState(30); // 0-100
-  const [sfxVolume, setSfxVolume] = useState(90); // 0-100
+  // Power-up State
+  const [powerUps, setPowerUps] = useState({ hint: 1, skip: 1, heal: 1 });
+  const [disabledOptions, setDisabledOptions] = useState([]);
 
   const [answerFeedback, setAnswerFeedback] = useState(null);
   const feedbackTimeoutRef = useRef(null);
-  // Ref để quản lý timeouts, tránh leak memory và lỗi khi unmount
   const timeoutsRef = useRef([]);
 
   const containerControls = useAnimation();
 
-  // Determine active level based on mode
   const activeLevelData = useMemo(() => {
      if (isReviewMode && wrongAnswers.length > 0) {
-        // Find the full level object for the first wrong answer
         const wId = wrongAnswers[0].id || wrongAnswers[0];
         return levels.find(l => l.id === wId) || gameLevels[0];
      }
@@ -174,10 +159,13 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
 
   const currentLevel = activeLevelData;
 
-  // Helper an toàn để set timeout và tự động track
+  // Clear disabled options on level change
+  useEffect(() => {
+    setDisabledOptions([]);
+  }, [currentLevel]);
+
   const safeSetTimeout = (callback, delay) => {
     const id = setTimeout(() => {
-      // Xóa id khỏi danh sách khi chạy xong
       timeoutsRef.current = timeoutsRef.current.filter(tId => tId !== id);
       callback();
     }, delay);
@@ -185,11 +173,9 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     return id;
   };
 
-  // Helper an toàn để set interval (dùng cho wait command)
   const safeSetInterval = (callback, delay) => {
     const id = setInterval(callback, delay);
-    // Interval cần được clear thủ công, nhưng ta lưu vào đây để clear all khi cần
-    timeoutsRef.current.push(id); // Lưu chung vào mảng ref
+    timeoutsRef.current.push(id);
     return id;
   };
 
@@ -201,12 +187,10 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     timeoutsRef.current = [];
   };
 
-  // Cleanup khi unmount
   useEffect(() => {
     return () => clearAllTimeouts();
   }, []);
 
-  // --- 1. HELPER ÂM THANH ---
   const playSfx = (filename) => {
     if (!enableSound) return;
     const audio = new Audio(`/assets/sounds/${filename}`);
@@ -214,40 +198,17 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     audio.play().catch((err) => {});
   };
 
-  // --- 2. NHẠC NỀN ---
-  useEffect(() => {
-    const bgMusic = new Audio('/assets/sounds/bg.mp3');
-    bgMusic.loop = true;
-    bgMusic.volume = Math.max(0, Math.min(1, bgmVolume / 100));
-
-    // Logic: Nếu đang bật sound VÀ không mở settings thì mới hát
-    if (enableSound && !showSettings) {
-      bgMusic.play().catch(() => {});
-    } else {
-      bgMusic.pause();
-    }
-
-    return () => {
-      bgMusic.pause();
-      bgMusic.currentTime = 0;
-    };
-  }, [enableSound, showSettings, bgmVolume]);
-
-  // --- 3. ĐỒNG HỒ ĐẾM NGƯỢC (GAME TIMER) ---
+  // Timer logic - No longer stops when Settings is Open, but we can keep that if desired.
+  // User asked for fix, but logic: Timer SHOULD pause on settings.
   useEffect(() => {
     let timer;
-    // Chỉ đếm khi còn mạng, chưa hiện bảng kết quả, và còn thời gian
-    // Fix: Nếu showSettings bật lên thì KHÔNG đếm, nhưng cũng KHÔNG xét thua nếu timeLeft <= 0 (vì đang pause)
-    if (showSettings) {
-       return;
-    }
+    if (showSettings) return;
 
     if (lives > 0 && !modal && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (timeLeft <= 0 && !modal) {
-      // Hết giờ -> Thua
       setTimeLeft(0);
       playSfx('lose.mp3');
       setModal({ type: 'gameover', message: 'Hết thời gian!\nBạn đã không hoàn thành nhiệm vụ kịp lúc.' });
@@ -255,10 +216,9 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     return () => clearInterval(timer);
   }, [lives, modal, showSettings, timeLeft]);
 
-  // --- 4. KHỞI TẠO / RESET ---
+  // Init
   useEffect(() => {
     if (loadGame) {
-      // Logic continue
       try {
         const save = JSON.parse(localStorage.getItem('scratch_game_save'));
         if (save) {
@@ -269,16 +229,15 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
            setStats(save.stats || { correct: 0, wrong: 0, total: 10 });
            setLevelOrder(save.levelOrder || []);
            if (save.characterId) setActiveCharacterId(save.characterId);
+           if (save.powerUps) setPowerUps(save.powerUps);
         }
       } catch (e) {
         console.error("Load failed", e);
-        // Fallback to new game
         setCurrentLevelIndex(0);
         setLives(5);
         setStats({ correct: 0, wrong: 0, total: gameLevels.length });
       }
     } else {
-      // New Game
       const defaultScores = JSON.parse(localStorage.getItem('scratch_game_scores') || '{"easy":0, "normal":0, "hard":0}');
       setScoreDetails(defaultScores);
 
@@ -287,19 +246,17 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
       setWrongAnswers([]);
       setStats({ correct: 0, wrong: 0, total: gameLevels.length });
       setIsReviewMode(false);
+      setPowerUps({ hint: 1, skip: 1, heal: 1 });
     }
 
     resetCharacter();
     setModal(null);
-    setTimeLeft(INITIAL_TIME); // Reset 30s
+    setTimeLeft(INITIAL_TIME);
     if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-  }, [difficulty]); // remove gameLevels.length dependency
+  }, [difficulty]);
 
-  // Save State Effect
   useEffect(() => {
      if (lives <= 0 || modal) return;
-
-     // Only save if we have valid levels
      if (gameLevels.length > 0) {
         const saveData = {
           difficulty,
@@ -309,36 +266,30 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
           scoreDetails,
           wrongAnswers,
           stats,
-          levelOrder: levelOrder || gameLevels.map(l => l.id)
+          levelOrder: levelOrder || gameLevels.map(l => l.id),
+          powerUps
         };
         localStorage.setItem('scratch_game_save', JSON.stringify(saveData));
-        // Also ensure levelOrder is set in state if not yet
         if (!levelOrder && !loadGame) {
            setLevelOrder(gameLevels.map(l => l.id));
         }
      }
-  }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, activeCharacterId, stats, gameLevels, levelOrder, loadGame, modal]);
+  }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, activeCharacterId, stats, gameLevels, levelOrder, loadGame, modal, powerUps]);
 
   const handleOpenGuide = () => { setShowSettings(false); setShowGuide(true); };
 
   const resetCharacter = () => {
-    // Clear các animation đang chạy dở
     clearAllTimeouts();
     setCharacterState({
       x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null
     });
-    // Reset nhân vật về ban đầu
     setActiveCharacterId(characterId || 'pink');
   };
 
   const restartGame = () => {
     if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-    // Clear mọi timeout cũ
     clearAllTimeouts();
-
-    // Kích hoạt random lại câu hỏi
     setRefreshKey(prev => prev + 1);
-    
     setCurrentLevelIndex(0);
     setLives(5);
     resetCharacter();
@@ -346,41 +297,87 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     setStats({ correct: 0, wrong: 0, total: gameLevels.length });
     setAnswerFeedback(null);
     setTimeLeft(INITIAL_TIME);
+    setPowerUps({ hint: 1, skip: 1, heal: 1 });
+    setIsReviewMode(false);
   };
 
-  // --- HELPER: LẤY NHÂN VẬT NGẪU NHIÊN ---
   const getRandomCharacter = (excludeId) => {
     const chars = ['pink', 'dude', 'owlet'];
     const available = chars.filter(c => c !== excludeId);
     return available[Math.floor(Math.random() * available.length)];
   };
 
-  // =========================================================================
-  // LOGIC XỬ LÝ COMBO CHUỖI HÀNH ĐỘNG
-  // =========================================================================
+  // --- POWER UP HANDLER ---
+  const handleUsePowerUp = (type) => {
+    if (powerUps[type] <= 0) return;
+    if (lives <= 0 || modal) return;
 
-  // A. Xử lý 1 lệnh đơn lẻ
+    // Use animejs for visual feedback
+    const btnId = `#btn-powerup-${type}`;
+    anime({
+      targets: btnId,
+      scale: [1, 1.5, 1],
+      duration: 300,
+      easing: 'easeInOutQuad'
+    });
+
+    if (type === 'hint') {
+      const wrongOptions = currentLevel.options.filter(
+         opt => opt.id !== currentLevel.correctBlockId && !disabledOptions.includes(opt.id)
+      );
+      if (wrongOptions.length > 0) {
+         // Disable 1 random wrong option
+         const toDisable = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+         setDisabledOptions(prev => [...prev, toDisable.id]);
+         setPowerUps(prev => ({ ...prev, hint: prev.hint - 1 }));
+         playSfx('pop.mp3');
+      }
+    } else if (type === 'heal') {
+       if (lives < 5) {
+          setLives(prev => Math.min(5, prev + 1));
+          setPowerUps(prev => ({ ...prev, heal: prev.heal - 1 }));
+          playSfx('win.mp3');
+          // Heal Animation
+          const heart = document.createElement('div');
+          heart.innerHTML = '❤️';
+          heart.style.position = 'absolute';
+          heart.style.left = '50%';
+          heart.style.top = '50%';
+          heart.style.fontSize = '100px';
+          heart.style.zIndex = 1000;
+          document.body.appendChild(heart);
+          anime({
+            targets: heart,
+            translateY: -200,
+            opacity: 0,
+            duration: 1000,
+            complete: () => document.body.removeChild(heart)
+          });
+       }
+    } else if (type === 'skip') {
+       setPowerUps(prev => ({ ...prev, skip: prev.skip - 1 }));
+       handleBlockClick(currentLevel.correctBlockId);
+    }
+  };
+
+
   const processSingleCommand = (cmd) => {
-    const GRID_SIZE = 60; // Tăng kích thước bước đi theo yêu cầu (làm di chuyển dài tí)
+    const GRID_SIZE = 60;
     const command = cmd.trim();
     let actionStatus = 'idle';
     
-    // Regex nhận diện lệnh
     const moveMatch = command.match(/(?:Move )?(Right|Left|Up|Down|Forward|Backward)(?: (\d+))?/i);
     const hopMatch  = command.match(/Hop(?: (\d+))?/i);
-    // Regex cho Color và Friend
     const colorMatch = command.match(/Color|Change/i);
     const friendMatch = command.match(/Friend|Message/i);
     
     setCharacterState((prev) => {
       let next = { ...prev };
       
-      // 1. TỐC ĐỘ
-      if (command.match(/Fast/i))      next.speed = 3; // Siêu nhanh
-      else if (command.match(/Slow/i)) next.speed = 0.5; // Slow motion
+      if (command.match(/Fast/i))      next.speed = 3;
+      else if (command.match(/Slow/i)) next.speed = 0.5;
       else if (command.match(/Reset Speed/i)) next.speed = 1;
 
-      // 2. DI CHUYỂN
       if (moveMatch) {
         const dir = moveMatch[1].toLowerCase();
         const steps = parseInt(moveMatch[2] || '1');
@@ -389,44 +386,37 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
         if (dir === 'right') { next.x += px; next.rotation = 90; }
         if (dir === 'left')  { next.x -= px; next.rotation = -90; }
         if (dir === 'up')    { next.y += px; next.rotation = 0; }
-        if (dir === 'down')  {
-          next.y -= px;
-          // next.rotation = 180; // Bỏ xoay khi đi xuống theo yêu cầu
-        }
+        if (dir === 'down')  { next.y -= px; }
         
         next.x = Math.max(-460, Math.min(460, next.x));
         next.y = Math.max(-240, Math.min(240, next.y));
       }
-      // 3. NHẢY (HOP)
       else if (hopMatch) {
-        const steps = parseInt(hopMatch[1] || '0');
+        // FIXED HOP: Now moves forward
+        const steps = parseInt(hopMatch[1] || '1'); // Default hop moves 1 block if not specified? Or 0? Let's say 1 for "jump forward"
         const px = steps * GRID_SIZE;
         const rad = (prev.rotation - 90) * (Math.PI / 180);
+
+        // Calculate forward vector
         next.x += Math.round(Math.cos(rad)) * px;
         next.y -= Math.round(Math.sin(rad)) * px;
+
         next.x = Math.max(-460, Math.min(460, next.x));
         next.y = Math.max(-240, Math.min(240, next.y));
       }
-      // 4. NGOẠI HÌNH & LOGIC MỚI
       else if (command.match(/Hide/i))   next.visible = false;
       else if (command.match(/Show/i))   next.visible = true;
       else if (command.match(/Grow/i))   next.scale = Math.min(2, prev.scale + 0.5);
       else if (command.match(/Shrink/i)) next.scale = Math.max(0.5, prev.scale - 0.3);
       else if (command.match(/Reset/i))  { next.scale = 1; next.x = 0; next.y = 0; next.visible = true; next.speed = 1; next.friend = null; setActiveCharacterId(characterId || 'pink'); }
-      
-      // LOGIC MỚI: XOAY & ĐỔI MÀU (Change Character)
       else if (colorMatch) {
-        // Xoay 1 vòng (360 độ)
         next.rotation += 360; 
-        // Đổi nhân vật sang ID khác ngẫu nhiên
         const newChar = getRandomCharacter(activeCharacterId);
         setActiveCharacterId(newChar);
       }
-
       return next;
     });
 
-    // Âm thanh & Animation Status
     if (moveMatch) {
       const dir = moveMatch[1].toLowerCase();
       if (dir === 'up') { actionStatus = 'jump'; playSfx('jump.mp3'); }
@@ -436,19 +426,14 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     else if (hopMatch) { actionStatus = 'jump'; playSfx('jump.mp3'); }
     else if (command.match(/Say|Think/i)) { actionStatus = 'say'; playSfx('pop.mp3'); }
     
-    // LOGIC MỚI: KÍCH HOẠT BẠN (FRIEND)
     else if (friendMatch) {
-       actionStatus = 'throw'; // Diễn hoạt ném tin nhắn
-       playSfx('pop.mp3'); // SỬA LỖI: Dùng pop.mp3 thay vì win.mp3
-       
-       // Sau khi ném xong, bạn sẽ xuất hiện
+       actionStatus = 'throw';
+       playSfx('pop.mp3');
        safeSetTimeout(() => {
           setCharacterState(prev => {
              const rad = (prev.rotation - 90) * (Math.PI / 180);
-             // Tính vị trí bạn xuất hiện (cách 2 ô về phía trước)
              const friendX = prev.x + Math.round(Math.cos(rad)) * 80;
              const friendY = prev.y - Math.round(Math.sin(rad)) * 80;
-             
              return {
                ...prev,
                friend: { 
@@ -459,7 +444,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
                }
              };
           });
-          playSfx('pop.mp3'); // SỬA LỖI: Không phát nhạc chiến thắng ở đây nữa
+          playSfx('pop.mp3');
        }, 500);
     }
     
@@ -468,46 +453,31 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     else if (command.match(/Bump/i)) { actionStatus = 'push'; playSfx('pop.mp3'); }
     else if (command.match(/Pop/i))  { playSfx('pop.mp3'); }
 
-    // Xử lý Text
     if (command.match(/Say|Think/i)) {
        const text = command.replace(/Say|Think/i, '').trim() || 'Hi!';
        setCharacterState(prev => ({ ...prev, speechText: text }));
        safeSetTimeout(() => setCharacterState(p => ({...p, speechText: null})), 1000);
     }
 
-    // Các lệnh không cần animation move/jump thì giữ nguyên status hiện tại
     if (command.match(/Fast|Slow|Hide|Show|Grow|Shrink|Reset|Color|Change/i)) return 'current';
     return actionStatus;
   };
 
-  // B. Điều phối chuỗi lệnh (Sequence Executor)
   const executeBlockAction = (fullBlockText) => {
-    // Tách chuỗi: "Right 2 -> Hop -> Wait 3"
     const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
     let accumulatedDelay = 0;
 
     actions.forEach((cmd) => {
       let duration = 600; 
-      
-      // --- XỬ LÝ LỆNH WAIT (TUA NHANH THỜI GIAN) ---
       const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
-      
       if (waitMatch) {
         const secsToWait = parseInt(waitMatch[1] || '1');
-        
-        // Thời gian thực tế để tua nhanh đồng hồ (1s)
         duration = 1000; 
-
-        // Lên lịch thực hiện việc tua đồng hồ
         safeSetTimeout(() => {
-          // 1. Nhân vật vào trạng thái Waiting (đứng yên)
           setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
-          
-          // 2. Trừ thẳng thời gian (Tua nhanh)
-          const stepInterval = 50; // Cập nhật mỗi 50ms
-          const totalSteps = duration / stepInterval; // 20 bước
-          const timePerStep = secsToWait / totalSteps; // Mỗi bước trừ bao nhiêu giây game
-
+          const stepInterval = 50;
+          const totalSteps = duration / stepInterval;
+          const timePerStep = secsToWait / totalSteps;
           let stepCount = 0;
           const intervalId = safeSetInterval(() => {
             stepCount++;
@@ -515,26 +485,17 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
                 const newValue = prev - timePerStep;
                 return newValue > 0 ? newValue : 0;
             });
-            
-            if (stepCount >= totalSteps) {
-              clearInterval(intervalId);
-              // Xóa khỏi ref nếu cần, nhưng safeSetInterval lưu chung nên ok
-            }
+            if (stepCount >= totalSteps) { clearInterval(intervalId); }
           }, stepInterval);
-
         }, accumulatedDelay);
-
-        // Sau khi tua xong (hết duration) -> Tắt trạng thái Waiting
         safeSetTimeout(() => {
           setCharacterState(prev => ({ ...prev, isWaiting: false }));
         }, accumulatedDelay + duration);
       }
       else {
-        // --- CÁC LỆNH KHÁC ---
         if (cmd.match(/Hop|Jump/i)) duration = 700;
         if (cmd.match(/Say|Think/i)) duration = 1200;
         if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
-        // Friend và Color cần thời gian diễn hoạt lâu hơn chút
         if (cmd.match(/Friend|Message/i)) duration = 1000; 
         if (cmd.match(/Color|Change/i)) duration = 800;
 
@@ -545,12 +506,9 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
            }
         }, accumulatedDelay);
       }
-
-      // Cộng dồn thời gian để lệnh sau chờ lệnh trước
       accumulatedDelay += duration;
     });
 
-    // Reset về Idle sau cùng
     safeSetTimeout(() => {
       setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null }));
     }, accumulatedDelay + 100);
@@ -564,16 +522,13 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     setAnswerFeedback(null);
     if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
     
-    // If not in review mode yet
     if (!isReviewMode) {
        if (currentLevelIndex < gameLevels.length - 1) {
          setCurrentLevelIndex(prev => prev + 1);
          resetCharacter();
          setTimeLeft(INITIAL_TIME);
        } else {
-         // Finished standard levels. Check for review.
          if (wrongAnswers.length > 0) {
-            // ENTER REVIEW MODE
             setIsReviewMode(true);
             setModal({ type: 'review_start', message: "Hãy sửa lại các lỗi sai để đạt điểm tuyệt đối!" });
          } else {
@@ -581,13 +536,10 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
          }
        }
     } else {
-       // We are IN Review Mode
+       // Review Mode Logic
        if (wrongAnswers.length === 0) {
           finishGame();
        } else {
-          // Keep looping until wrongAnswers is empty
-          // Since we remove correct answers from `wrongAnswers` immediately,
-          // we just need to ensure UI updates.
           resetCharacter();
           setTimeLeft(INITIAL_TIME);
        }
@@ -600,15 +552,11 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
 
       let isGolden = false;
       const { easy, normal, hard } = scoreDetails;
-
-      // Check if max score achieved
       if (difficulty === 'hard' && easy >= 10 && normal >= 10 && hard >= 9) {
           isGolden = true;
       }
       setIsGoldenWin(isGolden);
-
       setModal({ type: 'win', message: buildSummaryMessage(true) });
-      // Clear save on win
       localStorage.removeItem('scratch_game_save');
   };
 
@@ -623,36 +571,31 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
       const newCorrect = stats.correct + 1;
       setStats(prev => ({ ...prev, correct: newCorrect }));
 
-      // If in review mode, remove from wrongAnswers
       if (isReviewMode) {
          setWrongAnswers(prev => prev.filter(w => w.id !== currentLevel.id));
+         // Recover score in Review Mode so user can get Perfect Score
+         const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, scoreDetails[difficulty] + 1) };
+         setScoreDetails(newScoreDetails);
+         localStorage.setItem('scratch_game_scores', JSON.stringify(newScoreDetails));
+      } else {
+         // Update score in Normal Mode
+         const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, scoreDetails[difficulty] + 1) };
+         setScoreDetails(newScoreDetails);
+         localStorage.setItem('scratch_game_scores', JSON.stringify(newScoreDetails));
       }
 
-      // UPDATE PROGRESSIVE SCORE
-      const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, scoreDetails[difficulty] + 1) };
-      setScoreDetails(newScoreDetails);
-      localStorage.setItem('scratch_game_scores', JSON.stringify(newScoreDetails));
-
       setAnswerFeedback({ status: 'correct', selectedId: blockId, correctId: currentLevel.correctBlockId });
-      
-      // Thực thi chuỗi lệnh
       executeBlockAction(selectedBlock.text);
-      
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
       
-      // Tính thời gian chờ (ước lượng dựa trên số lệnh)
       const actionCount = selectedBlock.text.split('->').length;
       const waitCount = (selectedBlock.text.match(/Wait/g) || []).length;
       const friendCount = (selectedBlock.text.match(/Friend/g) || []).length;
-      
-      // Cộng thêm thời gian nếu có Friend/Wait
       const waitTime = Math.max(2500, (actionCount * 900) + (waitCount * 200) + (friendCount * 500));
       
       feedbackTimeoutRef.current = setTimeout(goToNextLevel, waitTime);
     } else {
       setStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
-
-      // Add to wrong answers if not already there
       if (!isReviewMode) {
          setWrongAnswers(prev => {
             if (prev.some(w => w.id === currentLevel.id)) return prev;
@@ -663,12 +606,9 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
       const newLives = lives - 1;
       setLives(newLives);
       setAnswerFeedback(null);
-
-      // Phạt trừ thời gian khi sai
       setTimeLeft(prev => Math.max(0, prev - 5));
 
       if (newLives <= 0) {
-        // Clear save on death
         localStorage.removeItem('scratch_game_save');
         playSfx('lose.mp3');
         setCharacterState(prev => ({ ...prev, status: 'death' }));
@@ -682,7 +622,6 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
     }
   };
 
-  // --- RENDER UI ---
   const isDark = theme === 'dark';
   const mainBgClass = isDark ? 'bg-slate-950' : 'bg-sky-100';
   const currentTheme = isDark
@@ -716,7 +655,21 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
           <motion.div className="z-10 flex items-center justify-center flex-1 w-full min-h-0 px-8 pt-24 pb-8" initial={{opacity:0}} animate={{opacity:1}}>
             <div className="flex w-full h-full max-w-[1800px] items-center justify-between gap-12">
               <motion.div className="w-[28%] min-w-[350px] max-w-[450px] h-full flex-none flex flex-col will-change-transform" initial={{x:-50}} animate={{x:0}} transition={{delay:0.2}}>
-                <GamePanel theme={theme} currentTheme={currentTheme} currentLevelIndex={currentLevelIndex} totalLevels={gameLevels.length} lives={lives} currentLevel={currentLevel} handleBlockClick={handleBlockClick} answerFeedback={answerFeedback} onSkipFeedback={goToNextLevel} />
+                <GamePanel
+                  theme={theme}
+                  currentTheme={currentTheme}
+                  currentLevelIndex={currentLevelIndex}
+                  totalLevels={gameLevels.length}
+                  lives={lives}
+                  currentLevel={currentLevel}
+                  handleBlockClick={handleBlockClick}
+                  answerFeedback={answerFeedback}
+                  onSkipFeedback={goToNextLevel}
+                  // Pass PowerUps props
+                  powerUps={powerUps}
+                  handleUsePowerUp={handleUsePowerUp}
+                  disabledOptions={disabledOptions}
+                />
               </motion.div>
               <motion.div className="relative flex items-center justify-end flex-1 h-full" initial={{x:50}} animate={{x:0}} transition={{delay:0.3}}>
                 {!lowEffects && (
@@ -724,14 +677,13 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
                     style={{ background: isDark ? '#22d3ee' : '#38bdf8', opacity: 0.05 + (fxDensity/100)*0.45, filter: `blur(${50+(fxDensity/100)*40}px)` }} />
                 )}
                 
-                {/* TRUYỀN DỮ LIỆU XUỐNG GAME MONITOR */}
                 <GameMonitor 
                     isDark={isDark} 
                     difficulty={difficulty} 
                     currentLevelIndex={currentLevelIndex} 
                     characterState={characterState} 
-                    characterId={activeCharacterId} // Dùng ID động đã đổi màu
-                    timeLeft={timeLeft} // Thời gian còn lại
+                    characterId={activeCharacterId}
+                    timeLeft={timeLeft}
                 />
               </motion.div>
             </div>
@@ -756,7 +708,6 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
             onChangeFxDensity={setFxDensity}
             setUiScale={setUiScale}
             uiScale={uiScale}
-            // Props âm thanh
             bgmVolume={bgmVolume}
             setBgmVolume={setBgmVolume}
             sfxVolume={sfxVolume}
@@ -769,7 +720,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale, onNe
             message={modal.message}
             theme={theme}
             stats={stats}
-            scoreDetails={scoreDetails} // Pass progressive scores
+            scoreDetails={scoreDetails}
             isGoldenWin={isGoldenWin}
             onHome={onBack}
             onReplay={restartGame}

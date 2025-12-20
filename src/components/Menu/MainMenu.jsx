@@ -24,7 +24,10 @@ const CyberBackground = () => (
   </div>
 );
 
-const MainMenu = ({ onStart, onContinue, onTutorial, onLeaderboard, onAbout, onGoHome, onGoGuide }) => {
+const MainMenu = ({
+  onStart, onContinue, onTutorial, onLeaderboard, onAbout, onGoHome, onGoGuide,
+  uiScale, setUiScale, bgmVolume, setBgmVolume, sfxVolume, setSfxVolume, enableSound, setEnableSound
+}) => {
   const [showSettings, setShowSettings] = useState(false);
   const [hasSaveFile, setHasSaveFile] = useState(false);
 
@@ -43,17 +46,15 @@ const MainMenu = ({ onStart, onContinue, onTutorial, onLeaderboard, onAbout, onG
     }
   }, []);
 
-  // State giả lập cho Settings
-  const [settings, setSettings] = useState({
+  // Visual settings (still local to Menu for now, or can be global if needed)
+  const [localSettings, setLocalSettings] = useState({
     isBlur: true,
-    isSound: true,
     isLowEffects: false,
     fxDensity: 60,
-    uiScale: 1,
   });
 
-  const updateSetting = (key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  const updateLocalSetting = (key, value) => {
+    setLocalSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleOpenGuideFromSettings = () => {
@@ -68,10 +69,6 @@ const MainMenu = ({ onStart, onContinue, onTutorial, onLeaderboard, onAbout, onG
   const handleGoHomeFromSettings = () => {
       setShowSettings(false);
       if (onGoHome) onGoHome();
-  };
-
-  const showNotImpl = (feature) => {
-    alert(`System Notice: Feature [${feature}] is under construction.`);
   };
 
   // Nút bấm Cyberpunk
@@ -210,16 +207,23 @@ const MainMenu = ({ onStart, onContinue, onTutorial, onLeaderboard, onAbout, onG
             onHome={handleGoHomeFromSettings}
             onOpenGuide={handleOpenGuideFromSettings}
             
-            isBlur={settings.isBlur}
-            toggleBlur={() => updateSetting('isBlur', !settings.isBlur)}
-            isSound={settings.isSound}
-            toggleSound={() => updateSetting('isSound', !settings.isSound)}
-            isLowEffects={settings.isLowEffects}
-            toggleLowEffects={() => updateSetting('isLowEffects', !settings.isLowEffects)}
-            fxDensity={settings.fxDensity}
-            onChangeFxDensity={(val) => updateSetting('fxDensity', val)}
-            uiScale={settings.uiScale}
-            setUiScale={(val) => updateSetting('uiScale', val)}
+            // Visuals
+            isBlur={localSettings.isBlur}
+            toggleBlur={() => updateLocalSetting('isBlur', !localSettings.isBlur)}
+            isLowEffects={localSettings.isLowEffects}
+            toggleLowEffects={() => updateLocalSetting('isLowEffects', !localSettings.isLowEffects)}
+            fxDensity={localSettings.fxDensity}
+            onChangeFxDensity={(val) => updateLocalSetting('fxDensity', val)}
+
+            // Global State passed down
+            uiScale={uiScale}
+            setUiScale={setUiScale}
+            bgmVolume={bgmVolume}
+            setBgmVolume={setBgmVolume}
+            sfxVolume={sfxVolume}
+            setSfxVolume={setSfxVolume}
+            isSound={enableSound}
+            toggleSound={() => setEnableSound(!enableSound)}
         />
       )}
 
