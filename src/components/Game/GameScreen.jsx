@@ -132,16 +132,55 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
     total: gameLevels.length,
   });
 
+  // AUDIO VOLUME STATE
+  const [bgmVolume, setBgmVolume] = useState(30); // 0-100
+  const [sfxVolume, setSfxVolume] = useState(90); // 0-100
+
   const [answerFeedback, setAnswerFeedback] = useState(null);
   const feedbackTimeoutRef = useRef(null);
+  // Ref để quản lý timeouts, tránh leak memory và lỗi khi unmount
+  const timeoutsRef = useRef([]);
+
   const containerControls = useAnimation();
   const currentLevel = gameLevels[currentLevelIndex];
+
+  // Helper an toàn để set timeout và tự động track
+  const safeSetTimeout = (callback, delay) => {
+    const id = setTimeout(() => {
+      // Xóa id khỏi danh sách khi chạy xong
+      timeoutsRef.current = timeoutsRef.current.filter(tId => tId !== id);
+      callback();
+    }, delay);
+    timeoutsRef.current.push(id);
+    return id;
+  };
+
+  // Helper an toàn để set interval (dùng cho wait command)
+  const safeSetInterval = (callback, delay) => {
+    const id = setInterval(callback, delay);
+    // Interval cần được clear thủ công, nhưng ta lưu vào đây để clear all khi cần
+    timeoutsRef.current.push(id); // Lưu chung vào mảng ref
+    return id;
+  };
+
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(id => {
+      clearTimeout(id);
+      clearInterval(id);
+    });
+    timeoutsRef.current = [];
+  };
+
+  // Cleanup khi unmount
+  useEffect(() => {
+    return () => clearAllTimeouts();
+  }, []);
 
   // --- 1. HELPER ÂM THANH ---
   const playSfx = (filename) => {
     if (!enableSound) return;
     const audio = new Audio(`/assets/sounds/${filename}`);
-    audio.volume = 0.5;
+    audio.volume = Math.max(0, Math.min(1, sfxVolume / 100));
     audio.play().catch((err) => {});
   };
 
@@ -149,16 +188,31 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
   useEffect(() => {
     const bgMusic = new Audio('/assets/sounds/bg.mp3');
     bgMusic.loop = true;
-    bgMusic.volume = 0.3;
-    if (enableSound) bgMusic.play().catch(() => {});
-    return () => { bgMusic.pause(); bgMusic.currentTime = 0; };
-  }, [enableSound]);
+    bgMusic.volume = Math.max(0, Math.min(1, bgmVolume / 100));
+
+    // Logic: Nếu đang bật sound VÀ không mở settings thì mới hát
+    if (enableSound && !showSettings) {
+      bgMusic.play().catch(() => {});
+    } else {
+      bgMusic.pause();
+    }
+
+    return () => {
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+    };
+  }, [enableSound, showSettings, bgmVolume]);
 
   // --- 3. ĐỒNG HỒ ĐẾM NGƯỢC (GAME TIMER) ---
   useEffect(() => {
     let timer;
     // Chỉ đếm khi còn mạng, chưa hiện bảng kết quả, và còn thời gian
-    if (lives > 0 && !modal && !showSettings && timeLeft > 0) {
+    // Fix: Nếu showSettings bật lên thì KHÔNG đếm, nhưng cũng KHÔNG xét thua nếu timeLeft <= 0 (vì đang pause)
+    if (showSettings) {
+       return;
+    }
+
+    if (lives > 0 && !modal && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
@@ -185,6 +239,8 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
   const handleOpenGuide = () => { setShowSettings(false); setShowGuide(true); };
 
   const resetCharacter = () => {
+    // Clear các animation đang chạy dở
+    clearAllTimeouts();
     setCharacterState({
       x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null
     });
@@ -194,6 +250,9 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
 
   const restartGame = () => {
     if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    // Clear mọi timeout cũ
+    clearAllTimeouts();
+
     // Kích hoạt random lại câu hỏi
     setRefreshKey(prev => prev + 1);
     
@@ -297,7 +356,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
        playSfx('pop.mp3'); // SỬA LỖI: Dùng pop.mp3 thay vì win.mp3
        
        // Sau khi ném xong, bạn sẽ xuất hiện
-       setTimeout(() => {
+       safeSetTimeout(() => {
           setCharacterState(prev => {
              const rad = (prev.rotation - 90) * (Math.PI / 180);
              // Tính vị trí bạn xuất hiện (cách 2 ô về phía trước)
@@ -327,7 +386,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
     if (command.match(/Say|Think/i)) {
        const text = command.replace(/Say|Think/i, '').trim() || 'Hi!';
        setCharacterState(prev => ({ ...prev, speechText: text }));
-       setTimeout(() => setCharacterState(p => ({...p, speechText: null})), 1000);
+       safeSetTimeout(() => setCharacterState(p => ({...p, speechText: null})), 1000);
     }
 
     // Các lệnh không cần animation move/jump thì giữ nguyên status hiện tại
@@ -354,7 +413,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
         duration = 1000; 
 
         // Lên lịch thực hiện việc tua đồng hồ
-        setTimeout(() => {
+        safeSetTimeout(() => {
           // 1. Nhân vật vào trạng thái Waiting (đứng yên)
           setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
           
@@ -364,7 +423,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
           const timePerStep = secsToWait / totalSteps; // Mỗi bước trừ bao nhiêu giây game
 
           let stepCount = 0;
-          const intervalId = setInterval(() => {
+          const intervalId = safeSetInterval(() => {
             stepCount++;
             setTimeLeft(prev => {
                 const newValue = prev - timePerStep;
@@ -373,13 +432,14 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
             
             if (stepCount >= totalSteps) {
               clearInterval(intervalId);
+              // Xóa khỏi ref nếu cần, nhưng safeSetInterval lưu chung nên ok
             }
           }, stepInterval);
 
         }, accumulatedDelay);
 
         // Sau khi tua xong (hết duration) -> Tắt trạng thái Waiting
-        setTimeout(() => {
+        safeSetTimeout(() => {
           setCharacterState(prev => ({ ...prev, isWaiting: false }));
         }, accumulatedDelay + duration);
       }
@@ -392,7 +452,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
         if (cmd.match(/Friend|Message/i)) duration = 1000; 
         if (cmd.match(/Color|Change/i)) duration = 800;
 
-        setTimeout(() => {
+        safeSetTimeout(() => {
            const newStatus = processSingleCommand(cmd);
            if (newStatus !== 'current') {
              setCharacterState(prev => ({ ...prev, status: newStatus }));
@@ -405,7 +465,7 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
     });
 
     // Reset về Idle sau cùng
-    setTimeout(() => {
+    safeSetTimeout(() => {
       setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null }));
     }, accumulatedDelay + 100);
   };
@@ -466,12 +526,12 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
       if (newLives <= 0) {
         playSfx('lose.mp3');
         setCharacterState(prev => ({ ...prev, status: 'death' }));
-        setTimeout(() => setModal({ type: 'gameover', message: buildSummaryMessage(false) }), 1500);
+        safeSetTimeout(() => setModal({ type: 'gameover', message: buildSummaryMessage(false) }), 1500);
       } else {
         playSfx('hurt.mp3');
         setCharacterState(prev => ({ ...prev, status: 'hurt' }));
         containerControls.start({ x: [-5, 5, -5, 5, 0], transition: { duration: 0.3 } });
-        setTimeout(goToNextLevel, 800);
+        safeSetTimeout(goToNextLevel, 800);
       }
     }
   };
@@ -535,7 +595,28 @@ const GameScreen = ({ difficulty, onBack, characterId, setUiScale, uiScale }) =>
 
       <AnimatePresence>
         {showGuide && <div className="fixed inset-0 z-[200] flex items-center justify-center"><motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={()=>setShowGuide(false)}/><div className="relative z-10 w-full h-full pointer-events-none"><div className="flex items-center justify-center w-full h-full p-4 pointer-events-auto"><div className="w-full max-w-[90vw] h-[90vh]"><TutorialScreen onBack={()=>setShowGuide(false)} isOverlay={true}/></div></div></div></div>}
-        {showSettings && <SettingsModal onClose={()=>setShowSettings(false)} onHome={onBack} onOpenGuide={handleOpenGuide} isBlur={enableBlur} toggleBlur={()=>setEnableBlur(v=>!v)} isSound={enableSound} toggleSound={()=>setEnableSound(v=>!v)} isLowEffects={lowEffects} toggleLowEffects={()=>setLowEffects(v=>!v)} fxDensity={fxDensity} onChangeFxDensity={setFxDensity} setUiScale={setUiScale} uiScale={uiScale} />}
+        {showSettings && (
+          <SettingsModal
+            onClose={()=>setShowSettings(false)}
+            onHome={onBack}
+            onOpenGuide={handleOpenGuide}
+            isBlur={enableBlur}
+            toggleBlur={()=>setEnableBlur(v=>!v)}
+            isSound={enableSound}
+            toggleSound={()=>setEnableSound(v=>!v)}
+            isLowEffects={lowEffects}
+            toggleLowEffects={()=>setLowEffects(v=>!v)}
+            fxDensity={fxDensity}
+            onChangeFxDensity={setFxDensity}
+            setUiScale={setUiScale}
+            uiScale={uiScale}
+            // Props âm thanh
+            bgmVolume={bgmVolume}
+            setBgmVolume={setBgmVolume}
+            sfxVolume={sfxVolume}
+            setSfxVolume={setSfxVolume}
+          />
+        )}
         {modal && !showSettings && <ResultModal type={modal.type} message={modal.message} theme={theme} stats={stats} onHome={onBack} onReplay={restartGame} onOpenSettings={()=>setShowSettings(true)} />}
       </AnimatePresence>
     </motion.div>

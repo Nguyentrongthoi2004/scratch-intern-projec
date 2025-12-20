@@ -98,6 +98,8 @@ const SettingsModal = ({
   uiScale, setUiScale,
   onHome,
   onOpenGuide,
+  bgmVolume, setBgmVolume, // ADDED PROPS
+  sfxVolume, setSfxVolume  // ADDED PROPS
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const tabs = [
@@ -221,8 +223,22 @@ const SettingsModal = ({
                         <div className="mb-6"><CyberToggle label="Âm thanh tổng (Master)" subLabel={isSound ? "Hệ thống âm thanh đang hoạt động" : "Tắt toàn bộ âm thanh"} active={isSound} onToggle={toggleSound} color="cyan" /></div>
                         <div className={`space-y-6 ${!isSound ? 'opacity-40 pointer-events-none filter grayscale' : ''}`}>
                            <div className="relative pl-4 border-l border-cyan-500/30">
-                              <CyberSlider label="Nhạc nền (BGM)" value={75} min={0} max={100} step={5} onChange={() => {}} valueLabel="75%" color="fuchsia" />
-                              <CyberSlider label="Hiệu ứng (SFX)" value={90} min={0} max={100} step={5} onChange={() => {}} valueLabel="90%" color="emerald" />
+                              <CyberSlider
+                                label="Nhạc nền (BGM)"
+                                value={bgmVolume}
+                                min={0} max={100} step={5}
+                                onChange={(e) => setBgmVolume(Number(e.target.value))}
+                                valueLabel={`${bgmVolume}%`}
+                                color="fuchsia"
+                              />
+                              <CyberSlider
+                                label="Hiệu ứng (SFX)"
+                                value={sfxVolume}
+                                min={0} max={100} step={5}
+                                onChange={(e) => setSfxVolume(Number(e.target.value))}
+                                valueLabel={`${sfxVolume}%`}
+                                color="emerald"
+                              />
                            </div>
                         </div>
                      </motion.div>
