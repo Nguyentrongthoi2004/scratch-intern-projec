@@ -90,7 +90,7 @@ const Stage = ({
 
     if (popRegex.test(speechText)) {
       // console.log("Playing Pop sound for text:", speechText); // Debug nếu cần
-      const audio = new Audio('assets/sounds/Pop.mp3');
+      const audio = new Audio('assets/sounds/pop.mp3');
       audio.volume = 0.5;
       audio.play().catch(() => {}); // Bỏ qua lỗi nếu trình duyệt chặn
       
