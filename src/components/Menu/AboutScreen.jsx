@@ -1,54 +1,7 @@
 // src/components/Menu/AboutScreen.jsx
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { IconUser, IconMusic, IconImage, IconGrid, IconVolume2, IconPlay } from '../UI/Icons';
-import Block from '../Block/Block';
-
-// --- DATA DEFINITIONS ---
-
-const CHARACTERS = [
-  { id: 'pink', name: 'Pink Monster', file: 'Pink_Monster_Idle_4.png' },
-  { id: 'owlet', name: 'Owlet Monster', file: 'Owlet_Monster_Idle_4.png' },
-  { id: 'dude', name: 'Dude Monster', file: 'Dude_Monster_Idle_4.png' },
-];
-
-const SOUNDS = [
-  { name: 'Background Music', file: 'bg.mp3' },
-  { name: 'Pop', file: 'pop.mp3' },
-  { name: 'Win', file: 'win.mp3' },
-  { name: 'Lose', file: 'lose.mp3' },
-  { name: 'Jump', file: 'jump.mp3' },
-  { name: 'Climb', file: 'climb.mp3' },
-  { name: 'Hurt', file: 'hurt.mp3' },
-  { name: 'Move', file: 'move.mp3' },
-];
-
-const BLOCKS = [
-  { type: 'motion', text: 'Move Right 1' },
-  { type: 'motion', text: 'Move Left 1' },
-  { type: 'motion', text: 'Move Up 1' },
-  { type: 'motion', text: 'Move Down 1' },
-  { type: 'motion', text: 'Turn Left' },
-  { type: 'motion', text: 'Turn Right' },
-  { type: 'motion', text: 'Jump' },
-  { type: 'motion', text: 'Go Home' },
-  { type: 'events', text: 'On Flag' },
-  { type: 'events', text: 'On Click' },
-  { type: 'events', text: 'On Bump' },
-  { type: 'looks', text: 'Say Hello' },
-  { type: 'looks', text: 'Hide' },
-  { type: 'looks', text: 'Show' },
-  { type: 'sound', text: 'Play Pop' },
-  { type: 'control', text: 'Wait 1s' },
-  { type: 'control', text: 'Repeat 3' },
-  { type: 'control', text: 'Stop' },
-];
-
-const BACKGROUNDS = [
-    { name: 'Noise Texture', file: 'ui/noise.svg' }
-]
-
-// --- COMPONENTS ---
+import React from 'react';
+import { motion } from 'framer-motion';
+import { IconUser } from '../UI/Icons';
 
 const CyberBackground = () => (
   <div className="absolute inset-0 z-0 overflow-hidden bg-[#020617]">
@@ -73,7 +26,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }) => (
     }`}
   >
     <Icon className="w-5 h-5" />
-    <span className="text-sm font-bold uppercase tracking-wider">{label}</span>
+    <span className="text-sm font-bold tracking-wider uppercase">{label}</span>
   </button>
 );
 
@@ -82,7 +35,7 @@ const SectionContainer = ({ children }) => (
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
-    className="w-full h-full overflow-y-auto pr-2 custom-scrollbar"
+    className="w-full h-full pr-2 overflow-y-auto custom-scrollbar"
   >
     {children}
   </motion.div>
@@ -107,163 +60,39 @@ const AboutScreen = ({ onBack }) => {
       <CyberBackground />
 
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="relative z-10 flex flex-col w-[90%] max-w-5xl h-[85vh] bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="relative z-10 max-w-2xl px-6 py-12 text-center border shadow-2xl bg-slate-900/80 backdrop-blur-md rounded-3xl border-white/10"
       >
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row items-center justify-between px-8 py-6 border-b border-white/5 bg-slate-950/50">
-          <h1 className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 uppercase">
+        <div className="flex flex-col items-center justify-between px-8 py-6 border-b md:flex-row border-white/5 bg-slate-950/50">
+          <h1 className="text-3xl font-black tracking-tighter text-transparent uppercase bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
             Game Report
           </h1>
 
-          <div className="flex gap-2 mt-4 md:mt-0 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
-            <TabButton active={activeTab === 'author'} onClick={() => setActiveTab('author')} icon={IconUser} label="Tác giả" />
-            <TabButton active={activeTab === 'chars'} onClick={() => setActiveTab('chars')} icon={IconUser} label="Nhân vật" />
-            <TabButton active={activeTab === 'audio'} onClick={() => setActiveTab('audio')} icon={IconMusic} label="Âm thanh" />
-            <TabButton active={activeTab === 'blocks'} onClick={() => setActiveTab('blocks')} icon={IconGrid} label="Blocks" />
-            <TabButton active={activeTab === 'bg'} onClick={() => setActiveTab('bg')} icon={IconImage} label="Background" />
+        <div className="space-y-4 text-slate-300">
+          <p className="text-lg leading-relaxed">
+            Chào mừng bạn đến với <strong className="text-cyan-300">Scratch Logic Master</strong>!
+          </p>
+          <p>
+            Đây là dự án thực tập năm 2025, được xây dựng với mục tiêu giúp người chơi rèn luyện tư duy lập trình thông qua các khối lệnh Scratch quen thuộc.
+          </p>
+
+          <div className="my-8 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+          <div className="flex flex-col items-center gap-2">
+            <IconUser className="w-12 h-12 text-cyan-300" />
+            <h3 className="text-xl font-bold text-white">Developer</h3>
+            <p className="font-mono text-sm text-cyan-400">Internship 2025</p>
           </div>
         </div>
 
-        {/* CONTENT */}
-        <div className="flex-1 p-8 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-
-            {/* 1. AUTHOR SECTION */}
-            {activeTab === 'author' && (
-              <SectionContainer key="author">
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-                   <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 p-[2px] shadow-[0_0_30px_rgba(6,182,212,0.4)]">
-                     <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
-                        <IconUser className="w-12 h-12 text-cyan-300" />
-                     </div>
-                   </div>
-
-                   <div className="space-y-2">
-                     <h2 className="text-3xl font-bold text-white">Scratch Logic Master</h2>
-                     <p className="text-cyan-400 font-mono">Dự án thực tập 2025</p>
-                   </div>
-
-                   <div className="max-w-2xl text-slate-300 leading-relaxed text-lg">
-                     <p>
-                       Trò chơi được xây dựng nhằm mục đích giáo dục, giúp người chơi làm quen với tư duy lập trình logic thông qua giao diện kéo thả trực quan.
-                     </p>
-                     <p className="mt-4">
-                       Toàn bộ assets (hình ảnh, âm thanh) và mã nguồn được tổng hợp và tối ưu hóa để chạy mượt mà trên nền tảng Web.
-                     </p>
-                   </div>
-                </div>
-              </SectionContainer>
-            )}
-
-            {/* 2. CHARACTERS SECTION */}
-            {activeTab === 'chars' && (
-              <SectionContainer key="chars">
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 h-full place-items-center">
-                   {CHARACTERS.map(char => (
-                     <div key={char.id} className="flex flex-col items-center gap-4 group">
-                       <div className="relative w-48 h-48 bg-slate-800/50 rounded-2xl border border-white/5 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-cyan-500/50 group-hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]">
-                         <div className="absolute inset-0 bg-[url('assets/images/ui/noise.svg')] opacity-10" />
-                         <img
-                           src={`assets/images/characters/${char.id}/${char.file}`}
-                           alt={char.name}
-                           className="w-[400%] max-w-none pixelated"
-                           style={{ animation: `sprite-preview 0.8s steps(4) infinite` }}
-                         />
-                       </div>
-                       <h3 className="text-xl font-bold text-slate-200 group-hover:text-cyan-300 transition-colors">{char.name}</h3>
-                       <span className="text-xs font-mono text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">{char.id}</span>
-                     </div>
-                   ))}
-                 </div>
-                 <style>{`
-                    @keyframes sprite-preview { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-                 `}</style>
-              </SectionContainer>
-            )}
-
-            {/* 3. AUDIO SECTION */}
-            {activeTab === 'audio' && (
-               <SectionContainer key="audio">
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                   {SOUNDS.map((sound, idx) => (
-                     <div key={idx} className="flex items-center justify-between p-4 bg-slate-800/40 rounded-xl border border-white/5 hover:bg-slate-800/80 transition-colors">
-                        <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-cyan-400">
-                              <IconMusic className="w-5 h-5" />
-                           </div>
-                           <div>
-                              <div className="font-bold text-slate-200">{sound.name}</div>
-                              <div className="text-xs font-mono text-slate-500">{sound.file}</div>
-                           </div>
-                        </div>
-                        <button
-                          onClick={() => playSound(sound.file)}
-                          className="w-10 h-10 rounded-full bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-white flex items-center justify-center transition-all"
-                        >
-                           <IconPlay className="w-4 h-4 ml-0.5" />
-                        </button>
-                     </div>
-                   ))}
-                 </div>
-               </SectionContainer>
-            )}
-
-            {/* 4. BLOCKS SECTION */}
-            {activeTab === 'blocks' && (
-              <SectionContainer key="blocks">
-                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 p-4">
-                   {BLOCKS.map((block, idx) => (
-                     <div key={idx} className="flex flex-col items-center gap-2">
-                        <div className="transform scale-75 origin-center">
-                           <Block type={block.type} text={block.text} onClick={() => {}} />
-                        </div>
-                        <span className="text-xs text-slate-400 font-mono text-center">{block.text}</span>
-                     </div>
-                   ))}
-                 </div>
-              </SectionContainer>
-            )}
-
-            {/* 5. BACKGROUNDS SECTION */}
-            {activeTab === 'bg' && (
-               <SectionContainer key="bg">
-                  <div className="grid grid-cols-1 gap-8">
-                     {BACKGROUNDS.map((bg, idx) => (
-                        <div key={idx} className="flex flex-col gap-4">
-                           <h3 className="text-xl font-bold text-white">{bg.name}</h3>
-                           <div className="w-full h-64 bg-slate-800 rounded-xl overflow-hidden border border-white/10 relative">
-                              {/* Preview Noise */}
-                              <div className="absolute inset-0 bg-[#020617]">
-                                 <div className={`absolute inset-0 bg-[url('assets/images/${bg.file}')] opacity-20`} />
-                              </div>
-                              <div className="absolute bottom-4 right-4 bg-black/50 px-3 py-1 rounded text-xs font-mono text-white backdrop-blur-sm">
-                                 {bg.file}
-                              </div>
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               </SectionContainer>
-            )}
-
-          </AnimatePresence>
-        </div>
-
-        {/* FOOTER */}
-        <div className="p-6 border-t border-white/5 flex justify-center bg-slate-950/50">
-           <button
-             onClick={() => {
-                if(playingAudio) { playingAudio.pause(); }
-                onBack();
-             }}
-             className="px-8 py-3 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-cyan-500 transition-all font-bold tracking-widest uppercase text-xs text-white"
-           >
-             Quay lại Menu
-           </button>
-        </div>
-
+        <button
+          onClick={onBack}
+          className="px-8 py-3 mt-10 text-xs font-bold tracking-widest uppercase transition-all border rounded-full bg-slate-800 hover:bg-slate-700 border-slate-600 hover:border-cyan-500"
+        >
+          Quay lại
+        </button>
       </motion.div>
     </div>
   );

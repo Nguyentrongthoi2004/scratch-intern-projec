@@ -228,7 +228,7 @@ const GameScreen = ({
            setStats(save.stats || { correct: 0, wrong: 0, total: 10 });
            setLevelOrder(save.levelOrder || []);
            if (save.characterId) setActiveCharacterId(save.characterId);
-           if (save.powerUps) setPowerUps(save.powerUps);
+           // if (save.powerUps) setInventory(save.powerUps); // Inventory is global now, don't overwrite from game save
         }
       } catch (e) {
         console.error("Load failed", e);
@@ -420,7 +420,7 @@ const GameScreen = ({
       const dir = moveMatch[1].toLowerCase();
       if (dir === 'up') { actionStatus = 'jump'; playSfx('jump.mp3'); }
       else if (dir === 'down') { actionStatus = 'climb'; playSfx('climb.mp3'); }
-      else { actionStatus = 'move'; playSfx('pop.mp3'); }
+      else { actionStatus = 'move'; playSfx('move.mp3'); }
     }
     else if (hopMatch) { actionStatus = 'jump'; playSfx('jump.mp3'); }
     else if (command.match(/Say|Think/i)) { actionStatus = 'say'; playSfx('pop.mp3'); }
