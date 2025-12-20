@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion'; 
 import { tutorialData } from '../../data/tutorialData';
+import { IconHome, IconLightning, IconRun, IconLook, IconSound, IconControl, IconStop } from '../UI/Icons';
 
 // Nền lưới (giữ nguyên cho khung ngoài)
 const CyberGridBg = React.memo(() => (
@@ -62,13 +63,21 @@ const TutorialScreen = ({ onBack, isOverlay = false }) => {
             <div className="flex flex-col w-1/4 min-w-[240px] border-r border-slate-800 bg-[#050b1a]">
                 <div className="p-6 border-b border-slate-800">
                     <h1 className="flex items-center gap-3 text-xl font-bold tracking-wider uppercase text-cyan-400">
-                        <span className="text-2xl">⚡</span> DATABASE
+                        <IconLightning className="w-6 h-6 text-yellow-500" /> DATABASE
                     </h1>
                 </div>
 
                 <div className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
                     {tutorialData.map((cat) => {
                         const isActive = activeTab === cat.id;
+                        // Map string icon to Component
+                        let IconComp = IconRun;
+                        if (cat.id === 'trigger') IconComp = IconLightning;
+                        if (cat.id === 'looks') IconComp = IconLook;
+                        if (cat.id === 'sound') IconComp = IconSound;
+                        if (cat.id === 'control') IconComp = IconControl;
+                        if (cat.id === 'end') IconComp = IconStop;
+
                         return (
                             <button
                                 key={cat.id}
@@ -80,7 +89,9 @@ const TutorialScreen = ({ onBack, isOverlay = false }) => {
                                         : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}
                                 `}
                             >
-                                <span className={`text-xl ${isActive ? 'scale-110' : ''}`}>{cat.icon}</span>
+                                <span className={`text-xl ${isActive ? 'scale-110' : ''}`}>
+                                    <IconComp className="w-5 h-5" />
+                                </span>
                                 <span className="text-xs font-bold tracking-wide uppercase">{cat.label}</span>
                             </button>
                         );
@@ -94,7 +105,7 @@ const TutorialScreen = ({ onBack, isOverlay = false }) => {
                             onClick={onBack}
                             className="flex items-center justify-center w-full gap-2 p-3 text-xs font-bold transition-all border rounded-lg text-slate-400 border-slate-700 hover:bg-slate-800 hover:text-white active:scale-95"
                         >
-                            🏠 QUAY VỀ MENU
+                            <IconHome className="w-4 h-4" /> QUAY VỀ MENU
                         </button>
                     </div>
                 )}
@@ -106,7 +117,17 @@ const TutorialScreen = ({ onBack, isOverlay = false }) => {
                 {/* Header Content - Nền trắng */}
                 <div className="flex items-center gap-4 p-8 pr-16 bg-white border-b border-slate-200">
                      <div className={`p-4 rounded-xl bg-slate-100 border border-slate-200 shadow-sm text-slate-700`}>
-                        <span className="text-3xl">{currentCategory.icon}</span>
+                        <span className="text-3xl">
+                            {(() => {
+                                let IconComp = IconRun;
+                                if (currentCategory.id === 'trigger') IconComp = IconLightning;
+                                if (currentCategory.id === 'looks') IconComp = IconLook;
+                                if (currentCategory.id === 'sound') IconComp = IconSound;
+                                if (currentCategory.id === 'control') IconComp = IconControl;
+                                if (currentCategory.id === 'end') IconComp = IconStop;
+                                return <IconComp className="w-8 h-8" />;
+                            })()}
+                        </span>
                     </div>
                     <div>
                         <h2 className="text-2xl font-black tracking-wide uppercase text-slate-800">

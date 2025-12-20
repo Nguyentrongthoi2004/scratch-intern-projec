@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import Stage from './Stage';
+import { IconClock } from '../UI/Icons';
 
 // --- 1. CÁC COMPONENT TRANG TRÍ (JOY-CON ĐÃ NÂNG CẤP) ---
 const JoyConLeft = memo(() => {
@@ -126,9 +127,7 @@ const GameMonitor = ({ isDark, difficulty, currentLevelIndex, characterState, ch
                  {/* ĐỒNG HỒ (TIME LEFT) - Số điện tử phát sáng */}
                  <div className="flex items-center gap-5">
                     <div className={`w-11 h-11 flex items-center justify-center rounded-xl bg-slate-800/50 border border-white/10 ${timeLeft <= 10 ? 'animate-pulse text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]'}`}>
-                       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                       </svg>
+                       <IconClock className="w-6 h-6 drop-shadow-sm" />
                     </div>
                     <div className="flex flex-col">
                        <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mb-1">Time Limit</span>

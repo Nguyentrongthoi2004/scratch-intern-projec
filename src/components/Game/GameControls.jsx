@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconHome, IconSettings, IconMoon, IconSun, IconEye, IconEyeOff } from '../UI/Icons';
 
 const GameControls = ({ onBack, setShowSettings, toggleTheme, theme, setHideUI, hideUI }) => {
   const isDark = theme === 'dark';
@@ -14,7 +15,7 @@ const GameControls = ({ onBack, setShowSettings, toggleTheme, theme, setHideUI, 
         className={`${btnClass} ${isDark ? 'bg-red-900/80 border-red-500 text-red-100 hover:bg-red-700/80' : 'bg-red-500 border-red-600 text-white hover:bg-red-600'}`}
         title="Về trang chủ"
       >
-        <span className="text-2xl">🏠</span>
+        <IconHome className="w-6 h-6" />
       </button>
 
       {/* SETTINGS */}
@@ -23,7 +24,7 @@ const GameControls = ({ onBack, setShowSettings, toggleTheme, theme, setHideUI, 
         className={`${btnClass} ${isDark ? 'bg-slate-900/80 border-slate-600 text-cyan-400 hover:border-cyan-400' : 'bg-white/90 border-slate-200 text-slate-700 hover:border-indigo-300'}`}
         title="Cài đặt"
       >
-        <span className="text-2xl animate-spin-slow">⚙️</span>
+        <IconSettings className="w-6 h-6 animate-spin-slow" />
       </button>
 
       {/* THEME */}
@@ -32,7 +33,7 @@ const GameControls = ({ onBack, setShowSettings, toggleTheme, theme, setHideUI, 
         className={`${btnClass} ${isDark ? 'bg-yellow-500/90 border-yellow-300 text-yellow-50' : 'bg-indigo-500 border-indigo-600 text-white'}`}
         title="Đổi giao diện"
       >
-        <span className="text-2xl">{theme === 'light' ? '🌙' : '☀️'}</span>
+        {theme === 'light' ? <IconMoon className="w-6 h-6" /> : <IconSun className="w-6 h-6" />}
       </button>
 
       {/* HIDE UI */}
@@ -41,7 +42,7 @@ const GameControls = ({ onBack, setShowSettings, toggleTheme, theme, setHideUI, 
         className={`${btnClass} ${isDark ? 'bg-slate-800/90 border-slate-500 text-white' : 'bg-slate-100 border-slate-300 text-slate-700'}`}
         title="Ẩn giao diện"
       >
-        <span className="text-2xl">{hideUI ? '👁️‍🗨️' : '👁️'}</span>
+        {hideUI ? <IconEyeOff className="w-6 h-6" /> : <IconEye className="w-6 h-6" />}
       </button>
     </div>
   );

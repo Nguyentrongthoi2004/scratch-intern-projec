@@ -172,3 +172,33 @@ body {
   transform-origin: bottom;
   animation: bar-wave 1.5s ease-in-out infinite;
 }
+
+/* ============ GOLDEN GLOW EFFECT FOR SPECIAL ENDING ============ */
+@keyframes golden-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(234, 179, 8, 0.4), inset 0 0 20px rgba(234, 179, 8, 0.2); }
+  50% { box-shadow: 0 0 80px rgba(250, 204, 21, 0.7), inset 0 0 40px rgba(250, 204, 21, 0.4); }
+}
+
+@keyframes golden-rays {
+  0% { transform: rotate(0deg); opacity: 0.3; }
+  50% { opacity: 0.6; }
+  100% { transform: rotate(360deg); opacity: 0.3; }
+}
+
+.golden-glow-container {
+  /* This will be added to the Result Modal overlay */
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.2) 0%, rgba(0,0,0,0.8) 70%);
+}
+
+.golden-glow-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 0deg, transparent 0%, rgba(250, 204, 21, 0.1) 15%, transparent 30%);
+  animation: golden-rays 10s linear infinite;
+  pointer-events: none;
+}

@@ -1,6 +1,7 @@
 // src/components/Menu/DifficultySelection.jsx
 import React from 'react';
 import { motion } from 'framer-motion';
+import { IconPlant, IconLightning, IconFlame } from '../UI/Icons';
 
 // --- Background Component (Tái sử dụng cho đồng bộ) ---
 const CyberBackground = () => (
@@ -27,7 +28,7 @@ const DifficultySelection = ({ onSelectDifficulty, onBack }) => {
       id: 'easy',
       label: 'EASY',
       sub: 'Khởi động nhẹ nhàng',
-      icon: '🌱',
+      icon: <IconPlant className="w-12 h-12" />,
       color: 'text-emerald-400',
       border: 'hover:border-emerald-500',
       gradient: 'bg-emerald-500/10',
@@ -37,7 +38,7 @@ const DifficultySelection = ({ onSelectDifficulty, onBack }) => {
       id: 'normal',
       label: 'NORMAL',
       sub: 'Thử thách tư duy',
-      icon: '⚡',
+      icon: <IconLightning className="w-12 h-12" />,
       color: 'text-yellow-400',
       border: 'hover:border-yellow-500',
       gradient: 'bg-yellow-500/10',
@@ -47,7 +48,7 @@ const DifficultySelection = ({ onSelectDifficulty, onBack }) => {
       id: 'hard',
       label: 'HARD',
       sub: 'Dành cho cao thủ',
-      icon: '🔥',
+      icon: <IconFlame className="w-12 h-12" />,
       color: 'text-rose-400',
       border: 'hover:border-rose-500',
       gradient: 'bg-rose-500/10',

@@ -1,6 +1,7 @@
 // src/components/UI/SettingsModal.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { IconSettings, IconEye, IconHome, IconBook, IconLightning } from './Icons';
 
 // ==========================================
 // 0. UTILS & DECORATIONS
@@ -65,11 +66,12 @@ const CyberSlider = ({ value, min, max, step, onChange, label, valueLabel, color
     <div className="relative p-5 mb-4 border rounded-2xl bg-[#0b1120]/60 border-white/5 hover:border-white/10 transition-all group">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className={`w-1 h-1 rounded-full bg-${color}-400 shadow-[0_0_8px_currentColor] animate-pulse`} />
-          <span className="text-xs font-black tracking-[0.15em] text-slate-300 uppercase group-hover:text-white transition-colors">{label}</span>
+          {/* Increased icon visibility */}
+          <div className={`w-2 h-2 rounded-full bg-${color}-400 shadow-[0_0_8px_currentColor] animate-pulse`} />
+          <span className="text-sm font-black tracking-[0.15em] text-slate-200 uppercase group-hover:text-white transition-colors">{label}</span>
         </div>
-        <div className={`flex items-center justify-center min-w-[50px] px-2 py-1 rounded-md border bg-[#020617] border-${color}-500/20`}>
-          <span className={`text-[10px] font-mono font-bold text-${color}-300`}>{valueLabel || value}</span>
+        <div className={`flex items-center justify-center min-w-[60px] px-3 py-1.5 rounded-md border bg-[#020617] border-${color}-500/20`}>
+          <span className={`text-xs font-mono font-bold text-${color}-300`}>{valueLabel || value}</span>
         </div>
       </div>
       <div className="relative flex items-center h-8 cursor-pointer">
@@ -101,8 +103,8 @@ const SettingsModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const tabs = [
-    { id: 'general', label: 'HỆ THỐNG', icon: '⚡' },
-    { id: 'visual', label: 'ĐỒ HỌA', icon: '👁️' },
+    { id: 'general', label: 'HỆ THỐNG', icon: <IconLightning className="w-4 h-4" /> },
+    { id: 'visual', label: 'ĐỒ HỌA', icon: <IconEye className="w-4 h-4" /> },
     { id: 'audio', label: 'ÂM THANH', icon: '🔊' },
   ];
 
@@ -130,7 +132,9 @@ const SettingsModal = ({
           <div className="w-[260px] relative z-10 flex flex-col bg-[#050b1a]/60 backdrop-blur-sm border-r border-white/5">
             <div className="p-8 pb-6">
               <div className="flex items-center gap-3 mb-1">
-                <div className="flex items-center justify-center w-8 h-8 rounded shadow-lg bg-gradient-to-br from-cyan-400 to-blue-600"><span className="text-lg font-black text-white">S</span></div>
+                <div className="flex items-center justify-center w-8 h-8 rounded shadow-lg bg-gradient-to-br from-cyan-400 to-blue-600">
+                  <IconSettings className="w-5 h-5 text-white animate-spin-slow" />
+                </div>
                 <h2 className="text-xl font-black text-white tracking-[0.2em] uppercase">CÀI ĐẶT</h2>
               </div>
               <p className="text-[9px] text-slate-500 font-bold tracking-widest uppercase pl-1">Version 2.5.0</p>
@@ -153,13 +157,13 @@ const SettingsModal = ({
             <div className="p-4 mt-auto border-t border-white/5 bg-[#030712]/40">
                <div className="grid grid-cols-2 gap-2">
                   <button onClick={onHome} className="flex flex-col items-center justify-center gap-1 p-3 transition-all border rounded-lg border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-slate-600 group/act">
-                    <span className="text-lg transition-all opacity-60 group-hover/act:opacity-100 group-hover/act:scale-110">🏠</span>
+                    <IconHome className="w-5 h-5 text-slate-500 transition-all opacity-60 group-hover/act:opacity-100 group-hover/act:scale-110 group-hover/act:text-slate-300" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider group-hover/act:text-slate-300">Home</span>
                   </button>
                   
                   {/* NÚT GUIDE: Bấm vào sẽ gọi onOpenGuide */}
                   <button onClick={onOpenGuide} className="flex flex-col items-center justify-center gap-1 p-3 transition-all border rounded-lg border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-slate-600 group/act">
-                    <span className="text-lg transition-all opacity-60 group-hover/act:opacity-100 group-hover/act:scale-110">📖</span>
+                    <IconBook className="w-5 h-5 text-slate-500 transition-all opacity-60 group-hover/act:opacity-100 group-hover/act:scale-110 group-hover/act:text-slate-300" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider group-hover/act:text-slate-300">Guide</span>
                   </button>
                </div>
@@ -210,7 +214,7 @@ const SettingsModal = ({
                         </div>
                         <div className={`p-6 border border-fuchsia-500/20 rounded-2xl bg-fuchsia-950/10 ${isLowEffects ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
                            <h4 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest uppercase text-fuchsia-200">Tùy chỉnh nâng cao</h4>
-                           <CyberSlider label="Mật độ hiệu ứng (FX Density)" value={density} min={0} max={100} step={10} onChange={(e) => onChangeFxDensity(parseInt(e.target.value))} valueLabel={`${density}%`} color="fuchsia" />
+                           <CyberSlider label="Mật độ hiệu ứng (FX Density)" value={density} min={0} max={100} step={10} onChange={(e) => onChangeFxDensity(parseInt(e.target.value))} valueLabel={`${density}% (${density > 80 ? 'High' : density > 40 ? 'Med' : 'Low'})`} color="fuchsia" />
                         </div>
                      </motion.div>
                    )}
