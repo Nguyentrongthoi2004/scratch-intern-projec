@@ -20,12 +20,12 @@ const CyberBackground = () => (
     <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px]" />
     
     {/* Scanline effect */}
-    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none" />
+    <div className="absolute inset-0 bg-[url('assets/images/ui/noise.svg')] opacity-5 pointer-events-none" />
   </div>
 );
 
 const MainMenu = ({
-  onStart, onContinue, onTutorial, onLeaderboard, onAbout, onGoHome, onGoGuide,
+  onStart, onContinue, onTutorial, onLeaderboard, onAbout, onShop, onGoHome, onGoGuide,
   uiScale, setUiScale, bgmVolume, setBgmVolume, sfxVolume, setSfxVolume, enableSound, setEnableSound
 }) => {
   const [showSettings, setShowSettings] = useState(false);
@@ -165,11 +165,19 @@ const MainMenu = ({
         />
 
         <MenuButton 
-          label="Bảng xếp hạng" 
-          icon={<IconTrophy className="w-6 h-6" />}
+          label="Cửa Hàng"
+          icon={<span className="text-xl">🛒</span>}
           color="yellow" 
-          onClick={onLeaderboard}
+          onClick={onShop}
           delay={0.3}
+        />
+
+        <MenuButton
+          label="Bảng xếp hạng"
+          icon={<IconTrophy className="w-6 h-6" />}
+          color="cyan"
+          onClick={onLeaderboard}
+          delay={0.4}
         />
 
         <MenuButton 
@@ -177,7 +185,7 @@ const MainMenu = ({
           icon={<IconSettings className="w-6 h-6" />}
           color="cyan" 
           onClick={() => setShowSettings(true)} 
-          delay={0.4}
+          delay={0.5}
         />
 
         <MenuButton 
@@ -185,7 +193,7 @@ const MainMenu = ({
           icon={<IconUser className="w-6 h-6" />}
           color="red" 
           onClick={onAbout}
-          delay={0.5}
+          delay={0.6}
         />
 
       </div>

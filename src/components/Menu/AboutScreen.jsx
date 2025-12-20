@@ -12,7 +12,7 @@ const CyberBackground = () => (
         backgroundSize: '40px 40px'
       }}
     />
-    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none" />
+    <div className="absolute inset-0 bg-[url('assets/images/ui/noise.svg')] opacity-5 pointer-events-none" />
   </div>
 );
 

@@ -77,7 +77,7 @@ const Block = ({ type, text, onClick, theme = 'light' }) => {
       {imageName ? (
         <div className="relative flex flex-col items-center">
             <img 
-                src={`/assets/images/ui/${imageName}`} 
+                src={`assets/images/ui/${imageName}`}
                 alt={text}
                 className="relative z-10 object-contain w-20 h-auto pixelated"
                 style={{ filter: `drop-shadow(0 0 5px ${neonColor})` }} 

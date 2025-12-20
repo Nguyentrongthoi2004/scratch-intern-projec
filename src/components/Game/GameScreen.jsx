@@ -82,7 +82,8 @@ ThemeDecorations.displayName = 'ThemeDecorations';
 const GameScreen = ({
   difficulty, onBack, characterId,
   setUiScale, uiScale, onNextLevel, loadGame,
-  bgmVolume, setBgmVolume, sfxVolume, setSfxVolume, enableSound, setEnableSound
+  bgmVolume, setBgmVolume, sfxVolume, setSfxVolume, enableSound, setEnableSound,
+  totalPoints, setTotalPoints, inventory, setInventory
 }) => {
   
   const [refreshKey, setRefreshKey] = useState(0);
@@ -139,8 +140,6 @@ const GameScreen = ({
     total: gameLevels.length,
   });
 
-  // Power-up State
-  const [powerUps, setPowerUps] = useState({ hint: 1, skip: 1, heal: 1 });
   const [disabledOptions, setDisabledOptions] = useState([]);
 
   const [answerFeedback, setAnswerFeedback] = useState(null);
@@ -193,7 +192,7 @@ const GameScreen = ({
 
   const playSfx = (filename) => {
     if (!enableSound) return;
-    const audio = new Audio(`/assets/sounds/${filename}`);
+    const audio = new Audio(`assets/sounds/${filename}`);
     audio.volume = Math.max(0, Math.min(1, sfxVolume / 100));
     audio.play().catch((err) => {});
   };
@@ -246,7 +245,7 @@ const GameScreen = ({
       setWrongAnswers([]);
       setStats({ correct: 0, wrong: 0, total: gameLevels.length });
       setIsReviewMode(false);
-      setPowerUps({ hint: 1, skip: 1, heal: 1 });
+      // Removed local powerUps reset to respect global inventory
     }
 
     resetCharacter();
@@ -267,14 +266,14 @@ const GameScreen = ({
           wrongAnswers,
           stats,
           levelOrder: levelOrder || gameLevels.map(l => l.id),
-          powerUps
+          // powerUps - no longer saved here, managed globally
         };
         localStorage.setItem('scratch_game_save', JSON.stringify(saveData));
         if (!levelOrder && !loadGame) {
            setLevelOrder(gameLevels.map(l => l.id));
         }
      }
-  }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, activeCharacterId, stats, gameLevels, levelOrder, loadGame, modal, powerUps]);
+  }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, activeCharacterId, stats, gameLevels, levelOrder, loadGame, modal]);
 
   const handleOpenGuide = () => { setShowSettings(false); setShowGuide(true); };
 
@@ -297,7 +296,7 @@ const GameScreen = ({
     setStats({ correct: 0, wrong: 0, total: gameLevels.length });
     setAnswerFeedback(null);
     setTimeLeft(INITIAL_TIME);
-    setPowerUps({ hint: 1, skip: 1, heal: 1 });
+    // setPowerUps({ hint: 1, skip: 1, heal: 1 }); // Controlled by global state now
     setIsReviewMode(false);
   };
 
@@ -309,7 +308,7 @@ const GameScreen = ({
 
   // --- POWER UP HANDLER ---
   const handleUsePowerUp = (type) => {
-    if (powerUps[type] <= 0) return;
+    if (inventory[type] <= 0) return;
     if (lives <= 0 || modal) return;
 
     // Use animejs for visual feedback
@@ -329,13 +328,13 @@ const GameScreen = ({
          // Disable 1 random wrong option
          const toDisable = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
          setDisabledOptions(prev => [...prev, toDisable.id]);
-         setPowerUps(prev => ({ ...prev, hint: prev.hint - 1 }));
+         setInventory(prev => ({ ...prev, hint: prev.hint - 1 }));
          playSfx('pop.mp3');
       }
     } else if (type === 'heal') {
        if (lives < 5) {
           setLives(prev => Math.min(5, prev + 1));
-          setPowerUps(prev => ({ ...prev, heal: prev.heal - 1 }));
+          setInventory(prev => ({ ...prev, heal: prev.heal - 1 }));
           playSfx('win.mp3');
           // Heal Animation
           const heart = document.createElement('div');
@@ -355,7 +354,7 @@ const GameScreen = ({
           });
        }
     } else if (type === 'skip') {
-       setPowerUps(prev => ({ ...prev, skip: prev.skip - 1 }));
+       setInventory(prev => ({ ...prev, skip: prev.skip - 1 }));
        handleBlockClick(currentLevel.correctBlockId);
     }
   };
@@ -570,6 +569,34 @@ const GameScreen = ({
     if (isCorrect) {
       const newCorrect = stats.correct + 1;
       setStats(prev => ({ ...prev, correct: newCorrect }));
+      
+      // Points Logic
+      // +10 Points per correct answer
+      setTotalPoints(prev => prev + 10);
+      
+      // Floating text for points
+      const pointEl = document.createElement('div');
+      pointEl.innerText = "+10 Điểm";
+      pointEl.style.position = 'absolute';
+      pointEl.style.left = '50%';
+      pointEl.style.top = '40%';
+      pointEl.style.transform = 'translate(-50%, -50%)';
+      pointEl.style.color = '#fde047'; // yellow-300
+      pointEl.style.fontWeight = 'bold';
+      pointEl.style.fontSize = '2rem';
+      pointEl.style.zIndex = 9999;
+      pointEl.style.pointerEvents = 'none';
+      pointEl.style.textShadow = '0 0 10px rgba(0,0,0,0.5)';
+      document.body.appendChild(pointEl);
+
+      anime({
+        targets: pointEl,
+        translateY: -100,
+        opacity: [1, 0],
+        duration: 1500,
+        easing: 'easeOutExpo',
+        complete: () => document.body.removeChild(pointEl)
+      });
 
       if (isReviewMode) {
          setWrongAnswers(prev => prev.filter(w => w.id !== currentLevel.id));
@@ -666,7 +693,7 @@ const GameScreen = ({
                   answerFeedback={answerFeedback}
                   onSkipFeedback={goToNextLevel}
                   // Pass PowerUps props
-                  powerUps={powerUps}
+                  powerUps={inventory}
                   handleUsePowerUp={handleUsePowerUp}
                   disabledOptions={disabledOptions}
                 />

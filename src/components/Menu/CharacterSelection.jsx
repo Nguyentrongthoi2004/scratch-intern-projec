@@ -15,7 +15,7 @@ const CyberBackground = () => (
     />
     {/* Ánh sáng nền (Glow Spots) */}
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-purple-600/10 rounded-full blur-[120px]" />
-    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none" />
+    <div className="absolute inset-0 bg-[url('assets/images/ui/noise.svg')] opacity-5 pointer-events-none" />
   </div>
 );
 
@@ -26,7 +26,7 @@ const CharacterSelection = ({ onSelectCharacter, onBack }) => {
       id: 'pink', 
       name: 'Pinky', 
       role: 'Agile Runner', 
-      img: '/assets/images/characters/pink/Pink_Monster.png',
+      img: 'assets/images/characters/pink/Pink_Monster.png',
       color: 'text-pink-400',
       border: 'hover:border-pink-500',
       bgHover: 'group-hover:bg-pink-500/10',
@@ -36,7 +36,7 @@ const CharacterSelection = ({ onSelectCharacter, onBack }) => {
       id: 'owlet', 
       name: 'Owlet', 
       role: 'Wise Guide',
-      img: '/assets/images/characters/owlet/Owlet_Monster.png',
+      img: 'assets/images/characters/owlet/Owlet_Monster.png',
       color: 'text-slate-200',
       border: 'hover:border-slate-400',
       bgHover: 'group-hover:bg-slate-500/10',
@@ -46,7 +46,7 @@ const CharacterSelection = ({ onSelectCharacter, onBack }) => {
       id: 'dude', 
       name: 'Dude', 
       role: 'Heavy Hitter',
-      img: '/assets/images/characters/dude/Dude_Monster.png',
+      img: 'assets/images/characters/dude/Dude_Monster.png',
       color: 'text-yellow-400',
       border: 'hover:border-yellow-500',
       bgHover: 'group-hover:bg-yellow-500/10',

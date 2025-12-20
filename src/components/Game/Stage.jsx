@@ -90,7 +90,7 @@ const Stage = ({
 
     if (popRegex.test(speechText)) {
       // console.log("Playing Pop sound for text:", speechText); // Debug nếu cần
-      const audio = new Audio('/assets/sounds/Pop.mp3'); 
+      const audio = new Audio('assets/sounds/pop.mp3');
       audio.volume = 0.5;
       audio.play().catch(() => {}); // Bỏ qua lỗi nếu trình duyệt chặn
       
@@ -150,7 +150,7 @@ const Stage = ({
           }}
         >
            <img 
-             src={`/assets/images/characters/${friend.id}/${CHAR_CONFIG[friend.id].idle.fileName}`} 
+             src={`assets/images/characters/${friend.id}/${CHAR_CONFIG[friend.id].idle.fileName}`}
              alt="Friend"
              className="absolute top-0 left-0 w-full h-full pixelated" 
              style={{ width: '400%', animation: `sprite-slide 0.8s steps(4) infinite` }} 
@@ -163,7 +163,7 @@ const Stage = ({
 
       {/* Obstacle */}
       {(status === 'hurt' || status === 'push') && (
-        <img src={`/assets/images/characters/${safeId}/Rock1.png`} className="absolute z-0 w-12 h-12 top-1/2 left-1/2 pixelated opacity-90" style={{ transform: `translate(30px, -20px)` }} alt="Obstacle" />
+        <img src={`assets/images/characters/${safeId}/Rock1.png`} className="absolute z-0 w-12 h-12 top-1/2 left-1/2 pixelated opacity-90" style={{ transform: `translate(30px, -20px)` }} alt="Obstacle" />
       )}
 
       {/* Main Character */}
@@ -181,7 +181,7 @@ const Stage = ({
         {animData.dust && visible && (
           <div className="absolute bottom-0 w-full -translate-x-1/2 pointer-events-none left-1/2 h-1/2 opacity-60 mix-blend-screen"
             style={{ 
-              backgroundImage: `url('/assets/images/characters/${safeId}/${animData.dust}')`, 
+              backgroundImage: `url('assets/images/characters/${safeId}/${animData.dust}')`,
               backgroundSize: `${(status === 'jump' ? 5 : 6) * 100}% 100%`, 
               animation: `sprite-slide ${animDuration} steps(${status === 'jump' ? 5 : 6}) infinite`, 
               imageRendering: 'pixelated' 
@@ -193,7 +193,7 @@ const Stage = ({
              style={{ 
                animation: status === 'jump' ? `bounce-arc ${moveDuration} infinite` : 'none' 
              }}>
-          <img src={`/assets/images/characters/${safeId}/${animData.fileName}`} alt="Character"
+          <img src={`assets/images/characters/${safeId}/${animData.fileName}`} alt="Character"
             className="absolute relative top-0 left-0 z-10 h-full max-w-none pixelated"
             style={{ 
               width: `${animData.frames * 100}%`, 

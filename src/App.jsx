@@ -7,6 +7,7 @@ import CharacterSelection from './components/Menu/CharacterSelection';
 import TutorialScreen from './components/Tutorial/TutorialScreen';
 import LeaderboardScreen from './components/Menu/LeaderboardScreen';
 import AboutScreen from './components/Menu/AboutScreen';
+import ShopScreen from './components/Menu/ShopScreen';
 import MouseTrail from './components/UI/MouseTrail';
 
 function App() {
@@ -15,6 +16,31 @@ function App() {
   const [character, setCharacter] = useState('pink'); 
   const [loadGame, setLoadGame] = useState(false);
   
+  // GLOBAL ECONOMY & INVENTORY STATE
+  const [totalPoints, setTotalPoints] = useState(() => {
+    try {
+      const saved = localStorage.getItem('scratch_game_userdata');
+      if (saved) return JSON.parse(saved).totalPoints || 0;
+    } catch (e) {}
+    return 0;
+  });
+
+  const [inventory, setInventory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('scratch_game_userdata');
+      if (saved) return JSON.parse(saved).inventory || { hint: 1, skip: 1, heal: 1 };
+    } catch (e) {}
+    return { hint: 1, skip: 1, heal: 1 };
+  });
+
+  // Persist User Data
+  useEffect(() => {
+    localStorage.setItem('scratch_game_userdata', JSON.stringify({
+      totalPoints,
+      inventory
+    }));
+  }, [totalPoints, inventory]);
+
   // GLOBAL UI & AUDIO STATE
   const [uiScale, setUiScale] = useState(100);
   const [bgmVolume, setBgmVolume] = useState(30);
@@ -23,7 +49,7 @@ function App() {
 
   // --- GLOBAL AUDIO CONTROLLER ---
   // Use a persistent Audio object
-  const [audioObj] = useState(new Audio('/assets/sounds/bg.mp3'));
+  const [audioObj] = useState(new Audio('assets/sounds/bg.mp3'));
 
   useEffect(() => {
     audioObj.loop = true;
@@ -47,6 +73,7 @@ function App() {
   const goGuide = () => setCurrentScreen('tutorial');
   const goLeaderboard = () => setCurrentScreen('leaderboard');
   const goAbout = () => setCurrentScreen('about');
+  const goShop = () => setCurrentScreen('shop');
 
   const handleContinue = () => {
     try {
@@ -89,6 +116,7 @@ function App() {
           onTutorial={goGuide} 
           onLeaderboard={goLeaderboard}
           onAbout={goAbout}
+          onShop={goShop}
           onGoHome={goHome} 
           onGoGuide={goGuide}
           
@@ -134,6 +162,12 @@ function App() {
             onGoGuide={goGuide}
             onNextLevel={handleNextLevel}
             
+            // Economy & Inventory
+            totalPoints={totalPoints}
+            setTotalPoints={setTotalPoints}
+            inventory={inventory}
+            setInventory={setInventory}
+
             // Props for Global State
             uiScale={uiScale} setUiScale={setUiScale}
             bgmVolume={bgmVolume} setBgmVolume={setBgmVolume}
@@ -141,6 +175,17 @@ function App() {
             enableSound={enableSound} setEnableSound={setEnableSound}
           />
         </div>
+      )}
+
+      {/* SHOP SCREEN */}
+      {currentScreen === 'shop' && (
+        <ShopScreen
+          onBack={goHome}
+          totalPoints={totalPoints}
+          setTotalPoints={setTotalPoints}
+          inventory={inventory}
+          setInventory={setInventory}
+        />
       )}
 
       {/* 6. MÀN HÌNH HƯỚNG DẪN */}

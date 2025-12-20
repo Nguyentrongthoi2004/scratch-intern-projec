@@ -154,7 +154,7 @@ const TutorialScreen = ({ onBack, isOverlay = false }) => {
                             >
                                 <div className="flex items-center justify-center w-20 h-16 p-2 transition-colors border rounded-lg bg-slate-100 border-slate-200 shrink-0 group-hover:border-cyan-200">
                                     <img
-                                        src={`/assets/images/ui/${block.img}`}
+                                        src={`assets/images/ui/${block.img}`}
                                         alt={block.text}
                                         className="object-contain w-full h-full pixelated"
                                         loading="lazy"
