@@ -1,5 +1,5 @@
 // src/components/UI/SettingsModal.jsx
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ==========================================
@@ -97,7 +97,7 @@ const SettingsModal = ({
   fxDensity, onChangeFxDensity,
   uiScale, setUiScale,
   onHome,
-  onOpenGuide, // <--- Quan trọng: Prop này sẽ nhận hàm chuyển trang từ MainMenu
+  onOpenGuide,
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const tabs = [
@@ -149,7 +149,7 @@ const SettingsModal = ({
               ))}
             </div>
 
-            {/* Quick Actions Footer - Nơi chứa nút Guide */}
+            {/* Quick Actions Footer */}
             <div className="p-4 mt-auto border-t border-white/5 bg-[#030712]/40">
                <div className="grid grid-cols-2 gap-2">
                   <button onClick={onHome} className="flex flex-col items-center justify-center gap-1 p-3 transition-all border rounded-lg border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-slate-600 group/act">
@@ -157,7 +157,6 @@ const SettingsModal = ({
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider group-hover/act:text-slate-300">Home</span>
                   </button>
                   
-                  {/* NÚT GUIDE: Bấm vào sẽ gọi onOpenGuide */}
                   <button onClick={onOpenGuide} className="flex flex-col items-center justify-center gap-1 p-3 transition-all border rounded-lg border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-slate-600 group/act">
                     <span className="text-lg transition-all opacity-60 group-hover/act:opacity-100 group-hover/act:scale-110">📖</span>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider group-hover/act:text-slate-300">Guide</span>
@@ -171,7 +170,8 @@ const SettingsModal = ({
             <div className="h-20 px-8 border-b border-white/5 flex items-center justify-between bg-[#0b1120]/30">
                <div>
                  <h3 className="text-2xl font-black tracking-wide text-transparent uppercase bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-slate-400">{tabs.find(t => t.id === activeTab)?.label}</h3>
-                 <p className="text-[10px] text-cyan-500/60 font-mono tracking-widest mt-1 uppercase">/// System Configuration ///</p>
+                 {/* Sửa lỗi comment nodes: bọc nội dung bằng dấu ngoặc nhọn */}
+                 <p className="text-[10px] text-cyan-500/60 font-mono tracking-widest mt-1 uppercase">{"/// System Configuration ///"}</p>
                </div>
                <button onClick={onClose} className="flex items-center justify-center w-10 h-10 transition-all border rounded-full border-slate-700 bg-slate-900/50 text-slate-400 hover:text-white hover:border-red-500/50 hover:bg-red-950/20">✕</button>
             </div>
@@ -190,11 +190,11 @@ const SettingsModal = ({
                               <span className="font-mono text-xl font-black text-cyan-400">{currentZoom}%</span>
                            </div>
                            <div className="relative flex items-center h-12 gap-4 px-4 border bg-slate-950 rounded-xl border-slate-800">
-                              <button onClick={() => setUiScale(Math.max(0.8, uiScale - 0.1))} className="text-lg font-bold text-slate-500 hover:text-white">-</button>
-                              <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
+                             <button onClick={() => setUiScale(Math.max(0.8, uiScale - 0.1))} className="text-lg font-bold text-slate-500 hover:text-white">-</button>
+                             <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
                                  <motion.div className="absolute h-full bg-cyan-500 shadow-[0_0_10px_cyan]" animate={{ width: `${((currentZoom - 80) / 30) * 100}%` }} />
-                              </div>
-                              <button onClick={() => setUiScale(Math.min(1.1, uiScale + 0.1))} className="text-lg font-bold text-slate-500 hover:text-white">+</button>
+                             </div>
+                             <button onClick={() => setUiScale(Math.min(1.1, uiScale + 0.1))} className="text-lg font-bold text-slate-500 hover:text-white">+</button>
                            </div>
                          </div>
                        </div>

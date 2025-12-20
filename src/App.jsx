@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GameScreen from './components/Game/GameScreen';
 import MainMenu from './components/Menu/MainMenu';
 import DifficultySelection from './components/Menu/DifficultySelection';
@@ -11,15 +11,21 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState('menu');
   const [difficulty, setDifficulty] = useState('easy');
   const [character, setCharacter] = useState('pink'); 
+  
+  // 1. THÊM STATE UI SCALE (Mặc định 100%)
+  const [uiScale, setUiScale] = useState(100);
 
-  // --- ĐỊNH NGHĨA 2 HÀM "DỊCH CHUYỂN" ---
-  // Hàm này là cái "Link" để về nhà
+  // Hàm "Dịch chuyển"
   const goHome = () => setCurrentScreen('menu');
-  // Hàm này là cái "Link" để sang hướng dẫn
   const goGuide = () => setCurrentScreen('tutorial');
 
   return (
-    <div className="h-screen overflow-hidden font-sans select-none App">
+    // Áp dụng scale cho toàn bộ ứng dụng (nếu bạn muốn zoom cả app)
+    // Hoặc chỉ truyền setUiScale xuống để Settings chỉnh
+    <div 
+      className="h-screen overflow-hidden font-sans select-none App"
+      style={{ zoom: uiScale / 100 }} // (Tùy chọn) Dòng này giúp UI thực sự to/nhỏ
+    >
       
       <MouseTrail />
 
@@ -27,11 +33,12 @@ function App() {
       {currentScreen === 'menu' && (
         <MainMenu 
           onStart={() => setCurrentScreen('character')} 
-          onTutorial={goGuide} // Nút to ngoài Menu
+          onTutorial={goGuide} 
+          onGoHome={goHome} 
+          onGoGuide={goGuide}
           
-          // --- QUAN TRỌNG: Truyền 2 hàm này xuống để SettingsModal dùng ---
-          onGoHome={goHome}   // Để nút Home trong Setting hoạt động
-          onGoGuide={goGuide} // Để nút Guide trong Setting hoạt động
+          // --- QUAN TRỌNG: Truyền setUiScale xuống ---
+          setUiScale={setUiScale} 
         />
       )}
 
@@ -42,7 +49,7 @@ function App() {
             setCharacter(charId); 
             setCurrentScreen('difficulty');
           }}
-          onBack={goHome} // Tận dụng hàm goHome
+          onBack={goHome} 
         />
       )}
 
@@ -63,8 +70,11 @@ function App() {
           <GameScreen 
             difficulty={difficulty} 
             characterId={character}
-            onBack={goHome}     // Nút thoát game về menu
-            onGoGuide={goGuide} // <--- QUAN TRỌNG: Truyền hàm này vào để nút Guide trong game hoạt động
+            onBack={goHome} 
+            onGoGuide={goGuide}
+            
+            // --- QUAN TRỌNG: Truyền setUiScale xuống ---
+            setUiScale={setUiScale}
           />
         </div>
       )}
@@ -72,11 +82,12 @@ function App() {
       {/* 6. MÀN HÌNH HƯỚNG DẪN */}
       {currentScreen === 'tutorial' && (
         <TutorialScreen 
-          onBack={goHome} // Nút quay lại mặc định
-          
-          // --- QUAN TRỌNG: Truyền 2 hàm này xuống để SettingsModal dùng ---
-          onGoHome={goHome}   
+          onBack={goHome} 
+          onGoHome={goHome} 
           onGoGuide={goGuide}
+          
+          // --- QUAN TRỌNG: Truyền setUiScale xuống ---
+          setUiScale={setUiScale}
         />
       )}
 

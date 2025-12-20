@@ -3,117 +3,101 @@ import React from 'react';
 
 const Block = ({ type, text, onClick, theme = 'light' }) => {
   
+  // Trích xuất số để hiển thị badge (ví dụ: "Move Right 5" -> lấy số 5)
   const valMatch = text.match(/-?\d+/);
   const rawVal = valMatch ? parseInt(valMatch[0]) : null;
-  const displayVal = rawVal ? Math.abs(rawVal) : null;
+  const displayVal = rawVal !== null ? Math.abs(rawVal) : null;
 
   const getIconImage = () => {
-    if (text.includes("Move") && !text.includes("-")) return "right.png";
-    if (text.includes("Move") && text.includes("-")) return "left.png";
-    if (text.includes("Turn right")) return "turnright.png";
-    if (text.includes("Turn left")) return "turnleft.png";
-    if (text.includes("Go to")) return "gohome.png";
-    
-    if (text.includes("clicked") || text.includes("tap")) return "ontap.png";
-    if (text.includes("flag")) return "onflag.png";
-    
-    if (text.includes("Say")) return "say.png";
-    if (text.includes("Hide")) return "hide.png";
-    if (text.includes("Show")) return "show.png";
-    
-    if (text.includes("Wait")) return "wait.png";
-    if (text.includes("Repeat")) return "repeat.png";
-    if (text.includes("Stop")) return "stop.png";
-    if (text.includes("Speed")) return "speed.png";
+    // CHUYỂN TẤT CẢ VỀ CHỮ THƯỜNG ĐỂ SO SÁNH CHÍNH XÁC
+    const t = text.toLowerCase();
 
-    if (text.includes("End")) return "end.png";
-    if (text.includes("Forever")) return "forever.png";
-    if (text.includes("Page")) return "page.png";
+    // KIỂM TRA THEO TỪ KHÓA (Ưu tiên từ khóa dài trước)
+    if (t.includes("turn left")) return "turnleft.png";
+    if (t.includes("turn right")) return "turnright.png";
+    
+    // Di chuyển
+    if (t.includes("right")) return "right.png";
+    if (t.includes("left")) return "left.png";
+    if (t.includes("up")) return "up.png";
+    if (t.includes("down")) return "down.png";
+    if (t.includes("hop")) return "hop.png";
+    if (t.includes("home") || t.includes("go to")) return "gohome.png";
+    
+    // Sự kiện
+    if (t.includes("flag")) return "onflag.png";
+    if (t.includes("clicked") || t.includes("tap")) return "ontap.png";
+    if (t.includes("bump") || t.includes("touch")) return "onbump.png";
+    if (t.includes("send")) return "messagesend.png";
+    if (t.includes("receive")) return "messagereceive.png";
+    
+    // Hình ảnh & Âm thanh
+    if (t.includes("say")) return "say.png";
+    if (t.includes("hide")) return "hide.png";
+    if (t.includes("show")) return "show.png";
+    if (t.includes("grow")) return "grow.png";
+    if (t.includes("shrink")) return "shrink.png";
+    if (t.includes("reset")) return "reset.png";
+    if (t.includes("pop")) return "pop.png";
+    if (t.includes("play")) return "playsound.png";
+    
+    // Điều khiển
+    if (t.includes("wait")) return "wait.png";
+    if (t.includes("repeat")) return "repeat.png";
+    if (t.includes("stop")) return "stop.png";
+    if (t.includes("speed")) return "speed.png";
+    if (t.includes("forever")) return "forever.png";
+    if (t.includes("page")) return "page.png";
+    if (t.includes("end")) return "end.png";
     
     return null;
   };
 
   const imageName = getIconImage();
 
-  // --- MÀU CHỦ ĐẠO ---
+  // Màu Neon dựa trên type
   const getThemeColor = () => {
     switch(type) {
-        case 'motion':  return '#3b82f6'; // Xanh
-        case 'events':  return '#fbbf24'; // Vàng
-        case 'looks':   return '#d946ef'; // Tím
-        case 'control': return '#f97316'; // Cam
-        case 'end':     return '#ef4444'; // Đỏ
+        case 'motion':  return '#3b82f6';
+        case 'events':  return '#fbbf24';
+        case 'looks':   return '#d946ef';
+        case 'sound':   return '#22c55e';
+        case 'control': return '#f97316';
+        case 'end':     return '#ef4444';
         default:        return '#ffffff';
     }
   };
   const neonColor = getThemeColor();
 
-  // Filter cho Block chính (Glow mạnh)
-  const getBlockFilter = () => {
-    return `drop-shadow(0 0 2px ${neonColor}) drop-shadow(0 0 6px ${neonColor})`;
-  };
-
   return (
     <div 
       onClick={onClick}
-      className="relative z-10 transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95 group hover:z-50"
-      title={text}
+      className="relative z-10 transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95 group"
     >
       {imageName ? (
         <div className="relative flex flex-col items-center">
-            
-            {/* 1. KHỐI LỆNH CHÍNH (Có viền sáng neon) */}
             <img 
                 src={`/assets/images/ui/${imageName}`} 
                 alt={text}
                 className="relative z-10 object-contain w-20 h-auto pixelated"
-                style={{ filter: getBlockFilter() }} 
+                style={{ filter: `drop-shadow(0 0 5px ${neonColor})` }} 
+                // Xử lý nếu file ảnh bị lỗi đường dẫn
+                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.classList.add('fallback-active'); }}
             />
             
-            {/* 2. Ô SỐ "ĐỈNH CAO" (LUXURY BADGE) */}
+            {/* Badge hiển thị số lượng (nếu có) */}
             {displayVal !== null && (
-                <div 
-                    className="absolute bottom-[4px] left-[45%] -translate-x-1/2 z-20 flex items-center justify-center"
-                    style={{
-                        minWidth: '36px',
-                        height: '22px',
-                        borderRadius: '12px', // Bo tròn kiểu viên thuốc (Capsule)
-                        
-                        // MÀU NỀN: Trắng pha chút màu của block để đồng bộ
-                        backgroundColor: '#ffffff',
-                        
-                        // VIỀN & BÓNG ĐỔ 3D (Bí mật của sự sang trọng)
-                        boxShadow: `
-                            inset 0 -2px 4px rgba(0,0,0,0.1), /* Bóng trong tạo độ sâu */
-                            0 2px 4px rgba(0,0,0,0.2),        /* Bóng đổ xuống nền */
-                            0 0 8px ${neonColor},             /* Hào quang màu trùng block */
-                            0 0 0 2px white                   /* Viền trắng cứng bao ngoài */
-                        `,
-                        border: `1px solid ${neonColor}` // Viền mỏng màu block
-                    }}
-                >
-                    {/* Hiệu ứng bóng kính (Glossy) ở nửa trên */}
-                    <div className="absolute top-0 left-0 w-full rounded-t-full h-1/2 bg-gradient-to-b from-white to-transparent opacity-80"></div>
-
-                    {/* Con số */}
-                    <span 
-                        className="relative z-10 text-sm font-black leading-none"
-                        style={{ 
-                            color: '#1e293b', // Màu chữ xám đen sang trọng
-                            textShadow: '0 1px 0 rgba(255,255,255,1)' // Bóng chữ trắng để nét hơn
-                        }}
-                    >
-                        {displayVal}
-                    </span>
+                <div className="absolute bottom-[4px] left-[45%] -translate-x-1/2 z-20 flex items-center justify-center min-w-[36px] h-[22px] rounded-[12px] bg-white border border-slate-200 shadow-sm">
+                    <span className="text-sm font-black text-slate-800">{displayVal}</span>
                 </div>
             )}
         </div>
       ) : (
-        <div className="flex items-center justify-center w-16 h-16 p-1 text-xs font-bold text-center text-white bg-gray-400 border-2 border-gray-500 rounded-lg">
-            {text}
+        /* KHỐI DỰ PHÒNG KHI KHÔNG TÌM THẤY ẢNH */
+        <div className="flex items-center justify-center w-16 h-16 p-2 text-[10px] font-bold text-center text-white bg-slate-600 border-2 border-slate-400 rounded-xl shadow-inner">
+            {text.toUpperCase()}
         </div>
       )}
-      
     </div>
   );
 };

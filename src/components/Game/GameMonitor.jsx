@@ -1,184 +1,183 @@
-// src/components/Game/GameMonitor.jsx
-import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
+import React, { memo } from 'react';
 import Stage from './Stage';
 
-// 1. TÁCH ĐỒNG HỒ RA RIÊNG (Để khi giây nhảy, không render lại cả máy Switch)
-const GameDashboard = memo(({ status, isDark }) => {
-  const [seconds, setSeconds] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => setSeconds(prev => prev + 1), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (secs) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className="mt-8 ml-12 flex items-center gap-8 px-10 py-3 bg-[#0f172a]/90 rounded-full border border-white/10 shadow-lg backdrop-blur-sm">
-      {/* Thời gian */}
-      <div className="flex items-center gap-4 pr-8 border-r border-white/10">
-        <span className="text-2xl animate-pulse">⏳</span>
-        <div className="flex flex-col">
-          <span className="text-[9px] text-slate-400 font-bold uppercase">Time</span>
-          <span className="font-mono text-xl font-black text-cyan-400">{formatTime(seconds)}</span>
-        </div>
-      </div>
-
-      {/* Trạng thái */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex w-3 h-3">
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status === 'idle' ? 'bg-green-400' : 'bg-yellow-400'}`} />
-          <span className={`relative inline-flex rounded-full h-3 w-3 ${status === 'idle' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[9px] text-slate-400 font-bold uppercase">Status</span>
-          <span className={`text-sm font-bold uppercase ${status === 'idle' ? 'text-green-400' : 'text-yellow-400'}`}>
-            {status === 'idle' ? 'READY' : 'RUNNING'}
-          </span>
-        </div>
-      </div>
-      
-      {/* Led Bar - Giảm số lượng div để nhẹ hơn */}
-      <div className="flex gap-1 pl-4 ml-2 border-l border-white/10">
-         <div className="w-1.5 h-6 rounded-full bg-cyan-500 animate-pulse"></div>
-         <div className="w-1.5 h-6 rounded-full bg-cyan-600 animate-pulse delay-75"></div>
-         <div className="w-1.5 h-6 rounded-full bg-slate-700"></div>
-      </div>
-    </div>
-  );
-});
-
-// 2. MEMO JOY-CON (Để nó không bị vẽ lại liên tục)
+// --- 1. CÁC COMPONENT TRANG TRÍ (JOY-CON ĐÃ NÂNG CẤP) ---
 const JoyConLeft = memo(() => {
-  const btnBase = "relative w-10 h-10 rounded-full bg-[#2a2a2a] shadow-[0_4px_0_#151515] flex items-center justify-center border-b border-white/5 active:translate-y-[4px] active:shadow-none transition-all";
-  const arrowStyle = "text-[#555] text-[10px] font-black group-hover:text-cyan-400";
+  // Nút bấm có chiều sâu hơn
+  const btnBase = "relative w-10 h-10 rounded-full bg-gradient-to-b from-[#333] to-[#222] shadow-[0_3px_0_#111,inset_0_1px_1px_rgba(255,255,255,0.1)] flex items-center justify-center border border-white/5 active:translate-y-[3px] active:shadow-[0_1px_0_#111] transition-all";
+  const arrowStyle = "text-[#666] text-[10px] font-black group-hover:text-cyan-300 drop-shadow-sm";
 
   return (
-    <div className="w-44 h-[660px] bg-[#00c3e3] rounded-l-[5rem] border-y-4 border-l-4 border-[#00a3c3] flex flex-col items-center justify-center gap-12 relative z-10 shadow-lg overflow-hidden will-change-transform">
-      <div className="absolute inset-0 rounded-l-[5rem] bg-gradient-to-r from-white/20 to-transparent pointer-events-none"></div>
+    // Thêm gradient và viền 3D cho thân Joy-Con
+    <div className="w-44 h-[660px] bg-gradient-to-b from-[#00dcfc] to-[#00a3c3] rounded-l-[5rem] border-t-4 border-l-4 border-[#40e0ff] border-b-4 border-r-[1px] border-b-[#008ca8] border-r-[#008ca8]/50 flex flex-col items-center justify-center gap-12 relative z-10 shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1),0_10px_20px_rgba(0,0,0,0.2)] overflow-hidden will-change-transform">
+      {/* Highlight bề mặt */}
+      <div className="absolute inset-0 rounded-l-[5rem] bg-gradient-to-r from-white/25 via-transparent to-transparent pointer-events-none"></div>
       <div className="absolute top-14 right-12 w-10 h-2.5 bg-[#333] shadow-sm rounded-sm"></div>
       
-      {/* Analog Stick - Dùng CSS thuần thay vì div lồng quá nhiều */}
-      <div className="w-24 h-24 rounded-full bg-[#1a1a1a] shadow-[inset_0_5px_10px_rgba(255,255,255,0.05)] flex items-center justify-center border-b-8 border-[#111]">
-        <div className="w-16 h-16 rounded-full bg-[#111] border-2 border-[#333]"></div>
+      {/* Analog Stick cao cấp hơn */}
+      <div className="w-24 h-24 rounded-full bg-gradient-to-b from-[#222] to-[#111] shadow-[inset_0_2px_5px_rgba(255,255,255,0.05),0_5px_10px_rgba(0,0,0,0.3)] flex items-center justify-center border-b-4 border-[#000]">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-[#333] shadow-[inset_0_5px_10px_rgba(0,0,0,0.5)]"></div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mt-4 scale-110">
-        <div />
-        <div className={`${btnBase} group`}><span className={arrowStyle}>▲</span></div>
-        <div />
-        <div className={`${btnBase} group`}><span className={arrowStyle}>◀</span></div>
-        <div />
-        <div className={`${btnBase} group`}><span className={arrowStyle}>▶</span></div>
-        <div />
-        <div className={`${btnBase} group`}><span className={arrowStyle}>▼</span></div>
-        <div />
+        <div /><div className={`${btnBase} group`}><span className={arrowStyle}>▲</span></div><div />
+        <div className={`${btnBase} group`}><span className={arrowStyle}>◀</span></div><div /><div className={`${btnBase} group`}><span className={arrowStyle}>▶</span></div>
+        <div /><div className={`${btnBase} group`}><span className={arrowStyle}>▼</span></div><div />
       </div>
-      <div className="absolute bottom-16 right-12 w-9 h-9 bg-[#222] rounded-lg border-2 border-[#333] shadow-inner"></div>
+      <div className="absolute bottom-16 right-12 w-9 h-9 bg-[#222] rounded-lg border border-[#333] shadow-inner"></div>
     </div>
   );
 });
 
 const JoyConRight = memo(() => {
-  const btnBase = "relative w-10 h-10 rounded-full bg-[#2a2a2a] shadow-[0_4px_0_#151515] flex items-center justify-center border-b border-white/5 active:translate-y-[4px] active:shadow-none transition-all";
-  const textStyle = "text-[#555] text-xs font-black group-hover:text-yellow-400";
+  const btnBase = "relative w-10 h-10 rounded-full bg-gradient-to-b from-[#333] to-[#222] shadow-[0_3px_0_#111,inset_0_1px_1px_rgba(255,255,255,0.1)] flex items-center justify-center border border-white/5 active:translate-y-[3px] active:shadow-[0_1px_0_#111] transition-all";
+  const textStyle = "text-[#666] text-xs font-black group-hover:text-yellow-300 drop-shadow-sm";
 
   return (
-    <div className="w-44 h-[660px] bg-[#ff4554] rounded-r-[5rem] border-y-4 border-r-4 border-[#d63a46] flex flex-col items-center justify-center gap-12 relative z-10 shadow-lg overflow-hidden will-change-transform">
-      <div className="absolute inset-0 rounded-r-[5rem] bg-gradient-to-l from-white/20 to-transparent pointer-events-none"></div>
+    <div className="w-44 h-[660px] bg-gradient-to-b from-[#ff5e6c] to-[#d63a46] rounded-r-[5rem] border-t-4 border-r-4 border-[#ff8a95] border-b-4 border-l-[1px] border-b-[#b02e38] border-l-[#b02e38]/50 flex flex-col items-center justify-center gap-12 relative z-10 shadow-[inset_5px_0_10px_rgba(0,0,0,0.1),0_10px_20px_rgba(0,0,0,0.2)] overflow-hidden will-change-transform">
+      <div className="absolute inset-0 rounded-r-[5rem] bg-gradient-to-l from-white/25 via-transparent to-transparent pointer-events-none"></div>
       <div className="absolute flex items-center justify-center w-10 h-10 top-14 left-12">
         <div className="absolute w-10 h-2.5 bg-[#333] rounded-sm"></div>
         <div className="absolute w-2.5 h-10 bg-[#333] rounded-sm"></div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mt-4 scale-110">
-        <div />
-        <div className={`${btnBase} group`}><span className={textStyle}>X</span></div>
-        <div />
-        <div className={`${btnBase} group`}><span className={textStyle}>Y</span></div>
-        <div />
-        <div className={`${btnBase} group`}><span className={textStyle}>A</span></div>
-        <div />
-        <div className={`${btnBase} group`}><span className={textStyle}>B</span></div>
-        <div />
+        <div /><div className={`${btnBase} group`}><span className={textStyle}>X</span></div><div />
+        <div className={`${btnBase} group`}><span className={textStyle}>Y</span></div><div /><div className={`${btnBase} group`}><span className={textStyle}>A</span></div>
+        <div /><div className={`${btnBase} group`}><span className={textStyle}>B</span></div><div />
       </div>
 
-      <div className="w-24 h-24 rounded-full bg-[#1a1a1a] shadow-[inset_0_5px_10px_rgba(255,255,255,0.05)] flex items-center justify-center border-b-4 border-[#111]">
-        <div className="w-16 h-16 rounded-full bg-[#111] border-2 border-[#333]"></div>
+      <div className="w-24 h-24 rounded-full bg-gradient-to-b from-[#222] to-[#111] shadow-[inset_0_2px_5px_rgba(255,255,255,0.05),0_5px_10px_rgba(0,0,0,0.3)] flex items-center justify-center border-b-4 border-[#000]">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-[#333] shadow-[inset_0_5px_10px_rgba(0,0,0,0.5)]"></div>
       </div>
-      <div className="absolute bottom-16 left-12 w-11 h-11 rounded-full border-[4px] border-[#333] bg-[#222] shadow-inner"></div>
+      <div className="absolute bottom-16 left-12 w-11 h-11 rounded-full border-[3px] border-[#333] bg-[#222] shadow-inner"></div>
     </div>
   );
 });
 
-// 3. COMPONENT CHÍNH ĐÃ ĐƯỢC TỐI ƯU
-const GameMonitor = ({ isDark, difficulty, currentLevelIndex, characterState, characterId }) => {
-  const isRunning = characterState.status !== 'idle';
+// --- 2. COMPONENT CHÍNH ---
+const GameMonitor = ({ isDark, difficulty, currentLevelIndex, characterState, characterId, timeLeft }) => {
+  
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  // Xác định trạng thái và màu sắc neon
+  let statusText = 'READY';
+  let statusColorClass = 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]';
+  let statusBgClass = 'bg-green-500 shadow-[0_0_15px_rgba(74,222,128,0.8)]';
+
+  if (characterState.isWaiting) {
+    statusText = 'WAITING...';
+    statusColorClass = 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]';
+    statusBgClass = 'bg-yellow-500 animate-pulse shadow-[0_0_15px_rgba(250,204,21,0.8)]';
+  } else if (characterState.status !== 'idle') {
+    statusText = 'RUNNING';
+    statusColorClass = 'text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]';
+    statusBgClass = 'bg-orange-500 animate-ping shadow-[0_0_15px_rgba(251,146,60,0.8)]';
+  }
+
+  const timeColorClass = timeLeft <= 10 
+    ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse' 
+    : 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]';
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
-      {/* KHUNG MÁY SWITCH */}
-      {/* will-change-transform giúp trình duyệt tối ưu render */}
-      <div className="relative flex items-center justify-center ml-12 transition-transform duration-300 filter drop-shadow-2xl hover:scale-[1.005] will-change-transform">
+      
+      {/* KHUNG MÁY SWITCH (Thêm hiệu ứng bóng đổ xuống nền xịn hơn) */}
+      <div className="relative flex items-center justify-center ml-12 transition-transform duration-300 filter drop-shadow-[0_25px_25px_rgba(0,0,0,0.3)] hover:scale-[1.005] will-change-transform">
         
         <JoyConLeft />
 
-        {/* MÀN HÌNH GIỮA */}
-        <div className={`relative bg-[#1a1a1a] border-y-[24px] border-x-[24px] border-[#222] w-[1025px] h-[680px] rounded-[2.5rem] shadow-2xl z-20 flex flex-col`}>
+        {/* MÀN HÌNH GIỮA (Thân máy) */}
+        {/* Thêm gradient nhẹ và viền kim loại cho thân máy */}
+        <div className={`relative bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] border-t-[24px] border-x-[24px] border-b-[24px] border-[#222] w-[1025px] h-[680px] rounded-[2.5rem] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05)] z-20 flex flex-col`}>
           
-          {/* Badge Level - Tĩnh */}
-          <div className="absolute z-50 -top-4 -right-4">
-             <div className="px-6 py-2 bg-[#222] text-cyan-400 text-xs font-black rounded-bl-2xl rounded-tr-2xl border-2 border-cyan-500/50 uppercase tracking-[0.25em] shadow-lg flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-cyan-400' : 'bg-yellow-400'}`}></div>
-                {difficulty}
+          {/* Badge Level - Làm nổi bật hơn */}
+          <div className="absolute z-50 -top-5 -right-6">
+             <div className="px-6 py-2 bg-gradient-to-r from-[#222] to-[#111] text-cyan-300 text-xs font-black rounded-xl border-2 border-cyan-500/30 uppercase tracking-[0.25em] shadow-[0_5px_15px_rgba(0,0,0,0.3)] flex items-center gap-3 backdrop-blur-md">
+                <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor] ${isDark ? 'bg-cyan-400 text-cyan-400' : 'bg-yellow-400 text-yellow-400'}`}></div>
+                {difficulty} <span className="text-slate-500">|</span> LVL {currentLevelIndex + 1}
              </div>
           </div>
 
-          {/* Khu vực hiển thị Game */}
-          <div className="relative flex-1 overflow-hidden bg-black border rounded-lg shadow-inner border-white/5">
-            {/* Grid nền tĩnh, bỏ animation nếu không cần thiết */}
-            <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'linear-gradient(#22d3ee 1px, transparent 1px), linear-gradient(90deg, #22d3ee 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
+          {/* KHUNG HIỂN THỊ GAME (MÀN HÌNH) */}
+          {/* Thêm hiệu ứng phát sáng (glow) từ màn hình ra viền */}
+          <div className="relative flex-1 overflow-hidden bg-black border-2 border-white/10 rounded-xl shadow-[0_0_30px_rgba(34,211,238,0.1)]">
             
-            <div className="flex items-center justify-center w-full h-full bg-black">
-              {/* STAGE CONTAINER - Đây là phần duy nhất thay đổi nặng */}
-              <div style={{ width: '1024px', height: '576px' }} className="relative overflow-hidden bg-black rounded-md shadow-2xl">
-                <Stage 
-                    key={currentLevelIndex} 
-                    x={characterState.x} 
-                    y={characterState.y} 
-                    rotation={characterState.rotation} 
-                    status={characterState.status}
-                    visible={characterState.visible}
-                    scale={characterState.scale}
-                    speechText={characterState.speechText}
-                    characterId={characterId} 
-                />
+            {/* STAGE CONTAINER */}
+            <div className="relative flex items-center justify-center w-full h-full bg-slate-950">
+              <Stage 
+                  key={currentLevelIndex} 
+                  x={characterState.x} y={characterState.y} 
+                  rotation={characterState.rotation} status={characterState.status}
+                  visible={characterState.visible} scale={characterState.scale}
+                  speechText={characterState.speechText}
+                  characterId={characterId} speed={characterState.speed}
+                  waitTimer={characterState.waitTimer} 
+              />
+
+              {/* --- THANH TRẠNG THÁI DƯỚI (HUD) --- */}
+              {/* Làm cho nó trông như mặt kính kỹ thuật số phát sáng */}
+              <div className="absolute bottom-0 w-full h-20 bg-gradient-to-t from-[#020617]/95 to-[#0f172a]/80 backdrop-blur-xl flex items-center justify-between px-10 border-t border-cyan-500/20 shadow-[0_-5px_20px_rgba(0,0,0,0.2)] z-40">
+                 
+                 {/* ĐỒNG HỒ (TIME LEFT) - Số điện tử phát sáng */}
+                 <div className="flex items-center gap-5">
+                    <div className={`w-11 h-11 flex items-center justify-center rounded-xl bg-slate-800/50 border border-white/10 ${timeLeft <= 10 ? 'animate-pulse text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]'}`}>
+                       <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                       </svg>
+                    </div>
+                    <div className="flex flex-col">
+                       <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mb-1">Time Limit</span>
+                       <span className={`text-3xl font-mono font-black tracking-tight leading-none ${timeColorClass}`}>
+                          {formatTime(timeLeft)}
+                       </span>
+                    </div>
+                 </div>
+
+                 {/* TRẠNG THÁI (STATUS) - Đèn báo và chữ phát sáng */}
+                 <div className="flex items-center gap-5 pl-8 border-l border-white/10">
+                    <div className="relative flex w-4 h-4">
+                       <span className={`absolute inline-flex h-full w-full rounded-full opacity-60 ${statusBgClass}`}></span>
+                       <span className={`relative inline-flex rounded-full h-4 w-4 border-2 border-white/20 ${statusBgClass.split(' ')[0]}`}></span>
+                    </div>
+                    <div className="flex flex-col">
+                       <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mb-1">System Status</span>
+                       <span className={`text-xl font-black uppercase leading-none ${statusColorClass}`}>
+                          {statusText}
+                       </span>
+                    </div>
+                 </div>
+
+                 {/* DECORATION BAR (LED Indicators) */}
+                 <div className="flex gap-2 opacity-60">
+                    <div className="w-1.5 h-5 bg-cyan-400 rounded-sm animate-pulse shadow-[0_0_5px_rgba(34,211,238,0.8)]"></div>
+                    <div className="w-1.5 h-5 bg-cyan-400 rounded-sm animate-pulse delay-100 shadow-[0_0_5px_rgba(34,211,238,0.8)]"></div>
+                    <div className="w-1.5 h-5 bg-cyan-400 rounded-sm animate-pulse delay-200 shadow-[0_0_5px_rgba(34,211,238,0.8)]"></div>
+                    <div className="w-1.5 h-5 bg-slate-700 rounded-sm"></div>
+                 </div>
+
               </div>
             </div>
           </div>
 
-          {/* Bottom Bezel */}
-          <div className="h-10 bg-[#1a1a1a] flex items-center justify-center relative">
-            <div className="flex items-center gap-2 opacity-40">
-              <div className="w-3 h-6 border-2 border-[#ccc] rounded-l-[5px]" />
-              <div className="w-3 h-6 bg-[#ccc] rounded-r-[5px]" />
+          {/* Bottom Bezel (Logo Switch giả - làm chìm hơn) */}
+          <div className="h-14 bg-gradient-to-t from-[#111] to-[#1a1a1a] flex items-center justify-center relative rounded-b-[2rem]">
+            <div className="flex items-center gap-2 transition-opacity duration-500 opacity-20 hover:opacity-50">
+              <div className="w-5 h-9 border-2 border-[#ccc] rounded-l-[7px]" />
+              <div className="w-5 h-9 bg-[#ccc] rounded-r-[7px]" />
             </div>
-            <div className="absolute right-12 w-2 h-2 bg-[#080808] rounded-full border border-[#333]" />
+            <div className="absolute right-16 w-3 h-3 bg-[#080808] rounded-full border border-[#333] shadow-sm" />
           </div>
         </div>
 
         <JoyConRight />
       </div>
-
-      {/* DASHBOARD ĐÃ TÁCH RIÊNG */}
-      <GameDashboard status={characterState.status} isDark={isDark} />
     </div>
   );
 };
 
-// Sử dụng React.memo để chặn render lại nếu props không đổi
 export default memo(GameMonitor);

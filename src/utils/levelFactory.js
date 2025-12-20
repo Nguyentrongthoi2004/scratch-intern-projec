@@ -1,22 +1,38 @@
 // src/utils/levelFactory.js
 
-// Thêm tham số 'hint' vào cuối hàm
-export const createLevel = (id, difficulty, title, instruction, correctBlock, wrongBlock1, wrongBlock2, hint = "Hãy thử các khối lệnh màu xanh dương!") => {
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
+export const createLevel = (
+  id, 
+  difficulty, 
+  title, 
+  instruction, 
+  correctBlock, 
+  wrong1, 
+  wrong2, 
+  hint = "Hãy quan sát kỹ các biểu tượng trên khối lệnh nhé!"
+) => {
   const rawOptions = [
-    { id: `opt_${id}_correct`, ...correctBlock, isCorrect: true },
-    { id: `opt_${id}_wrong1`, ...wrongBlock1, isCorrect: false },
-    { id: `opt_${id}_wrong2`, ...wrongBlock2, isCorrect: false },
-    // Thêm option thứ 4 cho đủ bộ (nếu muốn 4 ô) - Tạm thời ta dùng 3 ô nhưng xếp dọc cho thoáng
+    { ...correctBlock, id: `opt_${id}_correct`, isCorrect: true },
+    { ...wrong1, id: `opt_${id}_wrong1`, isCorrect: false },
+    { ...wrong2, id: `opt_${id}_wrong2`, isCorrect: false },
   ];
 
-  const shuffledOptions = rawOptions.sort(() => Math.random() - 0.5);
+  const shuffledOptions = shuffleArray(rawOptions);
 
   return {
     id,
     difficulty,
     title,
     instruction,
-    hint, // Lưu hint vào object trả về
+    hint,
     correctBlockId: rawOptions.find(opt => opt.isCorrect).id, 
     options: shuffledOptions
   };

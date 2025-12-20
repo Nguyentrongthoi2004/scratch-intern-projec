@@ -113,7 +113,6 @@ const TutorialScreen = ({ onBack, isOverlay = false }) => {
                             {currentCategory.label}
                         </h2>
                         <p className="mt-1 font-mono text-xs uppercase text-slate-500">
-                            // System Manual // Accessing Data...
                         </p>
                     </div>
                 </div>

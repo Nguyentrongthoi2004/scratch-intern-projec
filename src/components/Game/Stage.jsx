@@ -1,103 +1,248 @@
-import React from 'react';
+import React, { useMemo, useEffect, useRef } from 'react'; // Thêm useRef
 
-const Stage = ({ x, y, rotation, status, characterId, speechText, visible = true, scale = 1 }) => {
+const Stage = ({ 
+  x, y, rotation, status, characterId, speechText, 
+  visible = true, scale = 1, speed = 1, 
+  waitTimer, friend 
+}) => {
+  const safeId = characterId || 'pink';
   
+  // Dùng useRef để nhớ câu thoại vừa mới phát âm thanh xong
+  // Giúp ngăn chặn việc phát lại liên tục nếu component render lại
+  const lastPlayedText = useRef('');
+
+  // --- ASSETS (Giữ nguyên) ---
   const CHAR_CONFIG = {
-    pink: { idle: { fileName: 'Pink_Monster_Idle_4.png', frames: 4 }, move: { fileName: 'Pink_Monster_Run_6.png', frames: 6 }, hurt: { fileName: 'Pink_Monster_Hurt_4.png', frames: 4 }, death: { fileName: 'Pink_Monster_Death_8.png', frames: 8 } },
-    owlet: { idle: { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 }, move: { fileName: 'Owlet_Monster_Run_6.png', frames: 6 }, hurt: { fileName: 'Owlet_Monster_Hurt_4.png', frames: 4 }, death: { fileName: 'Owlet_Monster_Death_8.png', frames: 8 } },
-    dude: { idle: { fileName: 'Dude_Monster_Idle_4.png', frames: 4 }, move: { fileName: 'Dude_Monster_Run_6.png', frames: 6 }, hurt: { fileName: 'Dude_Monster_Hurt_4.png', frames: 4 }, death: { fileName: 'Dude_Monster_Death_8.png', frames: 8 } }
+    // ... (Giữ nguyên phần config nhân vật của bạn)
+    pink: {
+      idle:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 },
+      move:   { fileName: 'Pink_Monster_Run_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
+      jump:   { fileName: 'Pink_Monster_Jump_8.png', frames: 8, dust: 'Double_Jump_Dust_5.png' },
+      death:  { fileName: 'Pink_Monster_Death_8.png', frames: 8 },
+      hurt:   { fileName: 'Pink_Monster_Hurt_4.png', frames: 4 },
+      climb:  { fileName: 'Pink_Monster_Climb_4.png', frames: 4 },
+      say:    { fileName: 'Pink_Monster_Attack1_4.png', frames: 4 },
+      throw:  { fileName: 'Pink_Monster_Throw_4.png', frames: 4 },
+      push:   { fileName: 'Pink_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
+      flag:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 }
+    },
+    dude: {
+      idle:   { fileName: 'Dude_Monster_Idle_4.png', frames: 4 },
+      move:   { fileName: 'Dude_Monster_Run_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
+      jump:   { fileName: 'Dude_Monster_Jump_8.png', frames: 8, dust: 'Double_Jump_Dust_5.png' },
+      death:  { fileName: 'Dude_Monster_Death_8.png', frames: 8 },
+      hurt:   { fileName: 'Dude_Monster_Hurt_4.png', frames: 4 },
+      climb:  { fileName: 'Dude_Monster_Climb_4.png', frames: 4 },
+      say:    { fileName: 'Dude_Monster_Attack1_4.png', frames: 4 },
+      throw:  { fileName: 'Dude_Monster_Throw_4.png', frames: 4 },
+      push:   { fileName: 'Dude_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
+      flag:   { fileName: 'Dude_Monster_Idle_4.png', frames: 4 }
+    },
+    owlet: {
+      idle:   { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 },
+      move:   { fileName: 'Owlet_Monster_Run_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
+      jump:   { fileName: 'Owlet_Monster_Jump_8.png', frames: 8, dust: 'Double_Jump_Dust_5.png' },
+      death:  { fileName: 'Owlet_Monster_Death_8.png', frames: 8 },
+      hurt:   { fileName: 'Owlet_Monster_Hurt_4.png', frames: 4 },
+      climb:  { fileName: 'Owlet_Monster_Climb_4.png', frames: 4 },
+      say:    { fileName: 'Owlet_Monster_Attack1_4.png', frames: 4 },
+      throw:  { fileName: 'Owlet_Monster_Throw_4.png', frames: 4 },
+      push:   { fileName: 'Owlet_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
+      flag:   { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 }
+    }
   };
 
-  const safeId = characterId || 'pink';
   const currentConfig = CHAR_CONFIG[safeId] || CHAR_CONFIG.pink;
   const animData = currentConfig[status] || currentConfig.idle;
-  const imageUrl = `/assets/images/characters/${safeId}/${animData.fileName}`;
-  const animSpeed = status === 'death' ? '1s' : '0.6s'; // Tăng tốc độ chạy lên 0.6s cho mượt
-  const isMoving = status === 'move';
+  
+  // --- LOGIC ROTATION ---
+  const isFacingLeft = rotation === -90;
+  let cssRotation = '';
+  if (rotation === 0) {
+      cssRotation = ''; 
+  } else {
+      const isSpecialRotation = Math.abs(rotation) !== 90; 
+      cssRotation = isSpecialRotation ? `rotate(${rotation - 90}deg)` : '';
+  }
+  const cssScaleX = isFacingLeft ? -1 : 1;
+
+  // --- LOGIC BUBBLE ---
+  const isThinking = useMemo(() => {
+    if (!speechText) return false;
+    return speechText.includes('...') || speechText === 'Zzz' || speechText === 'Hmm' || speechText.startsWith('(');
+  }, [speechText]);
+
+  const bubbleBorderColor = isThinking ? 'border-slate-400' : 'border-cyan-500';
+  const bubbleBgColor = isThinking ? 'bg-white' : 'bg-cyan-100';
+
+  // --- 3. XỬ LÝ ÂM THANH (FIXED) ---
+  useEffect(() => {
+    if (!speechText || typeof speechText !== 'string') return;
+
+    // A. LOCK MECHANISM: Nếu text này đã phát rồi thì thôi, không phát lại
+    if (lastPlayedText.current === speechText) return;
+
+    // B. REGEX CHECK: Chỉ bắt từ "pop" nguyên vẹn (Whole Word)
+    // \b là ranh giới từ. Nó sẽ khớp "Pop", "pop!", "POP"
+    // Nhưng KHÔNG khớp "popular", "prop", "top", "lollipop"
+    const popRegex = /\bpop\b/i;
+
+    if (popRegex.test(speechText)) {
+      // console.log("Playing Pop sound for text:", speechText); // Debug nếu cần
+      const audio = new Audio('/assets/sounds/Pop.mp3'); 
+      audio.volume = 0.5;
+      audio.play().catch(() => {}); // Bỏ qua lỗi nếu trình duyệt chặn
+      
+      // Đánh dấu là đã phát cho câu này
+      lastPlayedText.current = speechText;
+    } else {
+      // Nếu text mới không có chữ pop, reset lại tracker (hoặc giữ nguyên tùy logic)
+      // Ở đây ta cập nhật để nếu câu sau có pop thì nó lại tính mới
+      lastPlayedText.current = speechText;
+    }
+  }, [speechText]);
+
+  // --- TIMING ---
+  const baseAnimSpeed = status === 'death' ? 1.0 : 0.3;
+  const animDuration = `${baseAnimSpeed / speed}s`;
+  const moveDuration = `${0.6 / speed}s`;
 
   return (
-    <div className="relative w-full h-full overflow-hidden font-mono border-4 border-gray-700 shadow-inner bg-sky-200 rounded-xl group">
+    <div className={`relative w-full h-full overflow-hidden border-4 border-slate-700 bg-slate-900 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-2xl font-mono ${status === 'hurt' || status === 'push' ? 'animate-shake-impact' : ''}`}>
       
-      {/* --- 1. ẢNH NỀN (TỐI ƯU HÓA) --- */}
-      <div 
-        className="absolute inset-0 w-full h-full"
-        style={{
-            backgroundImage: "url('/assets/images/bg-stage1.png')", 
-            imageRendering: 'pixelated',
-            // SỬA: Dùng 'cover' để ảnh luôn lấp đầy khung mà không bị méo tỷ lệ
-            backgroundSize: 'cover', 
-            backgroundPosition: 'left bottom', 
-            backgroundRepeat: 'repeat-x',      
-            animation: `bg-scroll 8s linear infinite`, // Tốc độ cuộn nhanh hơn xíu
-            animationPlayState: isMoving ? 'running' : 'paused'
-        }}
-      ></div>
+      {/* Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="w-full h-full" style={{ backgroundImage: 'linear-gradient(rgba(56,189,248,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute top-1/2 left-0 w-full h-[1px] bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.8)] z-0"></div>
+        <div className="absolute left-1/2 top-0 h-full w-[1px] bg-cyan-400/80 shadow-[0_0_8px_rgba(34,211,238,0.8)] z-0"></div>
+        <div key={characterId} className="absolute inset-0 bg-transparent pointer-events-none" />
+      </div>
 
-      {/* --- 2. CONTAINER NHÂN VẬT --- */}
+      {/* Coordinates */}
+      <div className="absolute z-50 px-4 py-2 border rounded-lg shadow-lg top-4 right-4 bg-slate-950/80 text-cyan-400 border-cyan-500/30 backdrop-blur-md">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Coordinates</div>
+        <div className="flex gap-4 font-mono text-sm font-bold text-cyan-300/90">
+          <span className="flex items-center"><span className="inline-block w-2 h-2 mr-2 bg-red-500 rounded-full opacity-70"></span>X: <span className={x !== 0 ? "text-white" : ""}>{Math.round(x)}</span></span>
+          <span className="flex items-center"><span className="inline-block w-2 h-2 mr-2 rounded-full bg-cyan-400 opacity-70"></span>Y: <span className={y !== 0 ? "text-white" : ""}>{Math.round(y)}</span></span>
+        </div>
+      </div>
+
+      {/* Wait Timer */}
+      {waitTimer !== null && waitTimer !== undefined && (
+        <div className="absolute z-50 flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
+           <div className="flex items-center justify-center w-24 h-24 bg-slate-900/90 border-4 border-cyan-400 rounded-full shadow-[0_0_40px_rgba(34,211,238,0.8)] animate-pulse">
+              <span className="font-mono text-5xl font-bold text-white">{waitTimer}</span>
+           </div>
+           <div className="mt-2 text-sm font-bold tracking-widest uppercase text-cyan-300 animate-bounce">Waiting...</div>
+        </div>
+      )}
+
+      {/* Friend */}
+      {friend && friend.visible && CHAR_CONFIG[friend.id] && (
+        <div
+          className="absolute z-10 w-32 h-32 will-change-transform"
+          style={{
+            top: '50%', left: '50%',
+            transform: `translate(-50%, -100%) translate(${friend.x}px, ${friend.y * -1}px)`,
+            transition: `transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease-in`,
+            opacity: 1
+          }}
+        >
+           <img 
+             src={`/assets/images/characters/${friend.id}/${CHAR_CONFIG[friend.id].idle.fileName}`} 
+             alt="Friend"
+             className="absolute top-0 left-0 w-full h-full pixelated" 
+             style={{ width: '400%', animation: `sprite-slide 0.8s steps(4) infinite` }} 
+           />
+           <div className="absolute top-0 flex justify-center w-full -mt-8 animate-bounce">
+              <span className="text-2xl filter drop-shadow-lg">💖</span>
+           </div>
+        </div>
+      )}
+
+      {/* Obstacle */}
+      {(status === 'hurt' || status === 'push') && (
+        <img src={`/assets/images/characters/${safeId}/Rock1.png`} className="absolute z-0 w-12 h-12 top-1/2 left-1/2 pixelated opacity-90" style={{ transform: `translate(30px, -20px)` }} alt="Obstacle" />
+      )}
+
+      {/* Main Character */}
       <div
-        className="absolute z-10 w-32 h-32 transition-all duration-300 ease-out will-change-transform" // Giảm duration xuống 300ms để phản hồi nhanh hơn
+        className="absolute z-20 w-32 h-32 will-change-transform"
         style={{
-          bottom: '18%', 
-          left: '50%',
-          // Thêm độ nảy (scale) khi di chuyển
-          transform: `translate(calc(-50% + ${x}px), calc(0% + ${y * -1}px)) rotate(${rotation - 90}deg) ${isMoving ? 'scale(1.1)' : 'scale(1)'}`,
-          opacity: status === 'death' ? 0.8 : 1,
-          filter: status === 'death' ? 'grayscale(100%)' : 'none'
+          top: '50%', left: '50%',
+          transition: `transform ${moveDuration} cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease`, 
+          transform: `translate(-50%, -100%) translate(${x}px, ${y * -1}px) scale(${cssScaleX}, 1) scale(${visible ? scale : 0}) ${cssRotation}`,
+          opacity: visible ? 1 : 0,
+          filter: `drop-shadow(0 4px 6px rgba(0,0,0,0.3)) hue-rotate(${safeId === 'dude' ? 180 : safeId === 'owlet' ? 90 : 0}deg)` 
         }}
       >
-        <div className="relative w-full h-full overflow-hidden">
-            <img 
-                src={imageUrl}
-                alt="Character"
-                className="absolute top-0 left-0 h-full max-w-none"
-                style={{
-                    imageRendering: 'pixelated',
-                    width: `${animData.frames * 100}%`,
-                    animation: `sprite-slide ${animSpeed} steps(${animData.frames}) infinite`
-                }}
-                onError={(e) => {
-                  const idleFileName = CHAR_CONFIG[safeId]?.idle?.fileName || CHAR_CONFIG.pink.idle.fileName;
-                  const pinkIdle = CHAR_CONFIG.pink.idle.fileName;
-
-                  // Check if we are already trying to load the current char idle
-                  if (e.target.src.includes(idleFileName)) {
-                      // If current char idle fails, try Pink monster idle (absolute path)
-                      if (!e.target.src.includes('pink/' + pinkIdle)) {
-                          e.target.src = `/assets/images/characters/pink/${pinkIdle}`;
-                      }
-                  } else {
-                      // If some other animation failed, try current char idle
-                      e.target.src = `/assets/images/characters/${safeId}/${idleFileName}`;
-                  }
-                }}
-            />
-        </div>
-
-        {/* HIỆU ỨNG BỤI (DUST PARTICLES) KHI CHẠY */}
-        {isMoving && (
-            <div className="absolute w-16 h-4 -translate-x-1/2 opacity-50 bottom-2 left-1/2">
-                <div className="absolute w-4 h-4 bg-white rounded-full animate-ping" style={{left: '0', animationDuration: '0.6s'}}></div>
-                <div className="absolute w-3 h-3 bg-white rounded-full animate-ping" style={{left: '20px', animationDelay: '0.2s'}}></div>
-            </div>
+        {/* Dust */}
+        {animData.dust && visible && (
+          <div className="absolute bottom-0 w-full -translate-x-1/2 pointer-events-none left-1/2 h-1/2 opacity-60 mix-blend-screen"
+            style={{ 
+              backgroundImage: `url('/assets/images/characters/${safeId}/${animData.dust}')`, 
+              backgroundSize: `${(status === 'jump' ? 5 : 6) * 100}% 100%`, 
+              animation: `sprite-slide ${animDuration} steps(${status === 'jump' ? 5 : 6}) infinite`, 
+              imageRendering: 'pixelated' 
+            }} />
         )}
 
-        {/* Bong bóng hội thoại */}
-        {speechText && (
-            <div className="absolute z-20 -translate-x-1/2 -top-16 left-1/2 animate-bounce">
-                <div className="bg-white border-2 border-black px-3 py-2 rounded-lg shadow-md min-w-[80px] text-center font-bold text-xs text-black relative">
-                    {speechText}
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-black"></div>
-                    <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-white"></div>
-                </div>
+        {/* Sprite */}
+        <div className="relative w-full h-full overflow-hidden"
+             style={{ 
+               animation: status === 'jump' ? `bounce-arc ${moveDuration} infinite` : 'none' 
+             }}>
+          <img src={`/assets/images/characters/${safeId}/${animData.fileName}`} alt="Character"
+            className="absolute relative top-0 left-0 z-10 h-full max-w-none pixelated"
+            style={{ 
+              width: `${animData.frames * 100}%`, 
+              animation: `sprite-slide ${animDuration} steps(${animData.frames}) infinite` 
+            }} />
+        </div>
+
+        {/* Icons */}
+        {status === 'flag' && (
+          <div className="absolute z-30 -translate-x-1/2 -top-16 left-1/2" style={{ transform: isFacingLeft ? 'scaleX(-1)' : 'none' }}>
+             <div className="flex items-center justify-center w-12 h-12 bg-white border-2 border-green-500 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-bounce">
+                <span className="text-2xl">🚩</span>
+             </div>
+          </div>
+        )}
+
+        {status === 'throw' && (
+          <div className="absolute flex items-center justify-center w-8 h-8 bg-slate-800 border-2 border-orange-400 rounded-full shadow-[0_0_10px_rgba(251,146,60,0.8)] -top-8 -right-8 animate-bounce z-20">
+            <span className="text-lg">✉️</span>
+          </div>
+        )}
+
+        {/* Speech Bubble */}
+        {speechText && visible && (
+          <div className="absolute z-30 -translate-x-1/2 -top-16 left-1/2" style={{ transform: isFacingLeft ? 'scaleX(-1)' : 'none' }}>
+            <div className={`relative px-4 py-2 text-xs font-bold text-cyan-950 ${bubbleBgColor} border-2 ${bubbleBorderColor} ${isThinking ? 'rounded-[20px]' : 'rounded-lg'} shadow-[0_0_15px_rgba(34,211,238,0.5)] min-w-[80px] text-center whitespace-nowrap animate-pop-in`}>
+              {speechText}
+              {isThinking ? (
+                 <>
+                   <div className={`absolute -bottom-2 left-6 w-2 h-2 ${bubbleBgColor} border ${bubbleBorderColor} rounded-full`}></div>
+                   <div className={`absolute -bottom-4 left-4 w-1.5 h-1.5 ${bubbleBgColor} border ${bubbleBorderColor} rounded-full`}></div>
+                 </>
+              ) : (
+                 <div className={`absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-${isThinking ? 'white' : 'cyan-500'}`}></div>
+              )}
             </div>
+          </div>
         )}
       </div>
 
       <style>{`
-        @keyframes bg-scroll {
-          from { background-position-x: 0; }
-          to { background-position-x: -100%; }
+        @keyframes sprite-slide { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        @keyframes shake-impact { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes bounce-arc {
+          0% { transform: translateY(0); animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1); }
+          50% { transform: translateY(-80px); animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0); }
+          100% { transform: translateY(0); }
         }
+        @keyframes pop-in { 0% { opacity:0; transform: scale(0.5); } 100% { opacity:1; transform: scale(1); } }
+        .pixelated { image-rendering: pixelated; }
       `}</style>
     </div>
   );
