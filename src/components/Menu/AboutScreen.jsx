@@ -314,4 +314,4 @@ const AboutScreen = ({ onBack }) => {
   );
 };
 
-export default AboutScreen;
+export default AboutScreen; 
