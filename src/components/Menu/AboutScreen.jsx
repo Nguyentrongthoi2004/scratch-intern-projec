@@ -52,7 +52,6 @@ const CHARACTERS = [
 ];
 
 const SOUNDS = [
-  { name: 'Background Theme', file: 'bg.mp3', type: 'Music' },
   { name: 'Pop Sound', file: 'pop.mp3', type: 'SFX' },
   { name: 'Win Jingle', file: 'win.mp3', type: 'SFX' },
   { name: 'Lose Jingle', file: 'lose.mp3', type: 'SFX' },
