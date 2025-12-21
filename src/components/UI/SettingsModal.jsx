@@ -1,5 +1,5 @@
 // src/components/UI/SettingsModal.jsx
-import { useState } from 'react'; // Bỏ React và useEffect thừa
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconSettings, IconEye, IconHome, IconBook, IconLightning } from './Icons';
 
@@ -97,10 +97,9 @@ const SettingsModal = ({
   isSound, toggleSound,
   isLowEffects, toggleLowEffects,
   fxDensity, onChangeFxDensity,
-  uiScale, setUiScale,
+  // uiScale Removed
   onHome,
   onOpenGuide,
-  // --- ĐÃ THÊM CÁC PROPS NÀY ĐỂ SỬA LỖI ---
   bgmVolume = 50, setBgmVolume = () => {}, 
   sfxVolume = 50, setSfxVolume = () => {},
 }) => {
@@ -112,7 +111,6 @@ const SettingsModal = ({
   ];
 
   const density = Math.max(0, Math.min(100, fxDensity ?? 60));
-  const currentZoom = Math.round((uiScale || 1) * 100);
 
   return (
     <AnimatePresence>
@@ -190,18 +188,13 @@ const SettingsModal = ({
                      <motion.div key="general" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                        <div className="p-6 rounded-2xl bg-[#0f172a]/40 border border-cyan-500/10 shadow-xl relative overflow-hidden">
                          <div className="relative z-10">
-                           <h4 className="inline-block pb-2 mb-6 text-sm font-bold tracking-widest uppercase border-b text-cyan-100 border-white/5">Hiển thị & Giao diện</h4>
-                           <div className="flex items-end justify-between mb-2">
-                             <label className="text-xs font-bold tracking-wide uppercase text-slate-300">Độ thu phóng (Zoom)</label>
-                             <span className="font-mono text-xl font-black text-cyan-400">{currentZoom}%</span>
-                           </div>
-                           <div className="relative flex items-center h-12 gap-4 px-4 border bg-slate-950 rounded-xl border-slate-800">
-                             <button onClick={() => setUiScale(Math.max(0.8, uiScale - 0.1))} className="text-lg font-bold text-slate-500 hover:text-white">-</button>
-                             <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
-                                <motion.div className="absolute h-full bg-cyan-500 shadow-[0_0_10px_cyan]" animate={{ width: `${((currentZoom - 80) / 30) * 100}%` }} />
-                             </div>
-                             <button onClick={() => setUiScale(Math.min(1.1, uiScale + 0.1))} className="text-lg font-bold text-slate-500 hover:text-white">+</button>
-                           </div>
+                           <h4 className="inline-block pb-2 mb-6 text-sm font-bold tracking-widest uppercase border-b text-cyan-100 border-white/5">Thông Tin</h4>
+                           <p className="text-slate-300 text-sm">
+                             Chào mừng bạn đến với Scratch Logic Master. Tại đây bạn có thể tùy chỉnh các thiết lập để có trải nghiệm tốt nhất.
+                           </p>
+                           <p className="text-slate-400 text-xs mt-2">
+                             (Tính năng Zoom đã được loại bỏ theo yêu cầu để tối ưu hóa hiển thị.)
+                           </p>
                          </div>
                        </div>
                      </motion.div>
