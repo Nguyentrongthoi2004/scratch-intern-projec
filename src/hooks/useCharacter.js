@@ -8,17 +8,9 @@ export const useCharacter = (initialId, playSfx) => {
   const [activeCharacterId, setActiveCharacterId] = useState(initialId || 'pink');
 
   const [characterState, setCharacterState] = useState({
-    x: 0,
-    y: 0,
-    rotation: 90,
-    status: 'idle',
-    visible: true,
-    scale: 1,
-    speechText: null,
-    speed: 1,
-    waitTimer: null,
-    isWaiting: false,
-    friend: null
+    x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1,
+    speechText: null, speed: 1, waitTimer: null, isWaiting: false,
+    friend: null, messageColor: null, tapEffect: false
   });
 
   const [activeLoopType, setActiveLoopType] = useState(null);
@@ -27,6 +19,7 @@ export const useCharacter = (initialId, playSfx) => {
 
   const timeoutsRef = useRef([]);
 
+  // Dùng useCallback từ Code 1 để tối ưu
   const safeSetTimeout = useCallback((callback, delay) => {
     const id = setTimeout(() => {
       timeoutsRef.current = timeoutsRef.current.filter(tId => tId !== id);
@@ -37,10 +30,7 @@ export const useCharacter = (initialId, playSfx) => {
   }, []);
 
   const clearAllTimeouts = useCallback(() => {
-    timeoutsRef.current.forEach(id => {
-      clearTimeout(id);
-      clearInterval(id);
-    });
+    timeoutsRef.current.forEach(id => clearTimeout(id));
     timeoutsRef.current = [];
   }, []);
 
@@ -51,7 +41,9 @@ export const useCharacter = (initialId, playSfx) => {
   const resetCharacter = useCallback((resetId = null) => {
     clearAllTimeouts();
     setCharacterState({
-      x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null
+      x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, 
+      speechText: null, speed: 1, waitTimer: null, isWaiting: false, 
+      friend: null, messageColor: null, tapEffect: false
     });
     setActiveLoopType(null);
     setRepeatProgress(null);
@@ -65,7 +57,7 @@ export const useCharacter = (initialId, playSfx) => {
     return available[Math.floor(Math.random() * available.length)];
   }, []);
 
-  // Process single command (updates state immediately)
+  // Logic xử lý lệnh lấy từ Code 2 (đầy đủ tính năng hơn) nhưng bọc trong useCallback
   const processSingleCommand = useCallback((cmd) => {
     const command = cmd.trim();
     let actionStatus = 'idle';
@@ -74,12 +66,15 @@ export const useCharacter = (initialId, playSfx) => {
     const turnMatch = command.match(/Turn (Right|Left)(?: (\d+))?/i);
     const hopMatch  = command.match(/Hop(?: (\d+))?/i);
     const colorMatch = command.match(/Color|Change/i);
-    const friendMatch = command.match(/Friend|Message/i);
+    const friendMatch = command.match(/Friend|Message|Send|Receive/i);
+    const stopMatch = command.match(/Stop/i);
+    const pageMatch = command.match(/Page|Go To Page/i);
+    const tapMatch = command.match(/Tap|Start on Tap/i);
 
     setCharacterState((prev) => {
       let next = { ...prev };
 
-      if (command.match(/Fast/i))      next.speed = 3;
+      if (command.match(/Fast/i))       next.speed = 3;
       else if (command.match(/Slow/i)) next.speed = 0.5;
       else if (command.match(/Reset Speed/i)) next.speed = 1;
 
@@ -104,9 +99,7 @@ export const useCharacter = (initialId, playSfx) => {
         if (dir === 'right') next.rotation += deg;
         if (dir === 'left') next.rotation -= deg;
       }
-      else if (command.match(/Go Home/i)) {
-         next.x = 0; next.y = 0;
-      }
+      else if (command.match(/Go Home/i)) { next.x = 0; next.y = 0; }
       else if (hopMatch) {
         const steps = parseInt(hopMatch[1] || '1');
         const px = steps * GRID_SIZE;
@@ -126,6 +119,9 @@ export const useCharacter = (initialId, playSfx) => {
         const newChar = getRandomCharacter(activeCharacterId);
         setActiveCharacterId(newChar);
       }
+      
+      if (tapMatch) { next.tapEffect = true; }
+
       return next;
     });
 
@@ -137,10 +133,17 @@ export const useCharacter = (initialId, playSfx) => {
     }
     else if (hopMatch) { actionStatus = 'jump'; playSfx('jump.mp3'); }
     else if (command.match(/Say|Think/i)) { actionStatus = 'say'; playSfx('pop.mp3'); }
-
     else if (friendMatch) {
+       let msgColor = 'white';
+       if (command.match(/Red/i)) msgColor = 'red';
+       if (command.match(/Blue/i)) msgColor = 'blue';
+       if (command.match(/Green/i)) msgColor = 'green';
+       if (command.match(/Yellow/i)) msgColor = 'yellow';
+       
+       setCharacterState(prev => ({ ...prev, messageColor: msgColor }));
        actionStatus = 'throw';
-       playSfx('throw.mp3');
+       playSfx('send.mp3');
+
        safeSetTimeout(() => {
           setCharacterState(prev => {
              const rad = (prev.rotation - 90) * (Math.PI / 180);
@@ -150,20 +153,36 @@ export const useCharacter = (initialId, playSfx) => {
                ...prev,
                friend: {
                  id: getRandomCharacter(activeCharacterId),
-                 x: friendX,
-                 y: friendY,
-                 visible: true
+                 x: friendX, y: friendY, visible: true,
+                 isAttacking: command.match(/Bump/i)
                }
              };
           });
-          playSfx('throw.mp3');
+          playSfx('send.mp3');
        }, 500);
     }
-
-    else if (command.match(/Send|Broadcast/i)) { actionStatus = 'throw'; playSfx('throw.mp3'); }
+    else if (command.match(/Bump/i)) { 
+        actionStatus = 'say'; 
+        playSfx('bump.mp3');
+        safeSetTimeout(() => {
+           setCharacterState(prev => {
+             const rad = (prev.rotation - 90) * (Math.PI / 180);
+             const friendX = prev.x + Math.round(Math.cos(rad)) * 60;
+             const friendY = prev.y - Math.round(Math.sin(rad)) * 60;
+             return {
+               ...prev,
+               friend: {
+                 id: getRandomCharacter(activeCharacterId),
+                 x: friendX, y: friendY, visible: true, isAttacking: true 
+               }
+             };
+           });
+        }, 200);
+    }
     else if (command.match(/Flag/i)) { actionStatus = 'flag'; playSfx('flag.mp3'); }
-    else if (command.match(/Bump/i)) { actionStatus = 'push'; playSfx('bump.mp3'); }
     else if (command.match(/Pop/i))  { playSfx('pop.mp3'); }
+    else if (pageMatch) { actionStatus = 'flag'; playSfx('page.mp3'); }
+    else if (stopMatch) { playSfx('stop.mp3'); }
 
     if (command.match(/Say|Think/i)) {
        const text = command.replace(/Say|Think/i, '').trim() || 'Hi!';
@@ -175,89 +194,90 @@ export const useCharacter = (initialId, playSfx) => {
     return actionStatus;
   }, [initialId, playSfx, activeCharacterId, getRandomCharacter, safeSetTimeout]);
 
-  // Async Execution
+  // --- SỬA LỖI REPEAT VÀ DÙNG USECALLBACK ---
   const executeBlockAction = useCallback(async (fullBlockText, setTimeLeft) => {
     const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
 
-    // Check for Loop/Control commands first
     const repeatMatch = fullBlockText.match(/Repeat (\d+)/i);
     const isForever = fullBlockText.match(/Forever/i);
     const isEnd = fullBlockText.match(/End/i);
 
-    if (isEnd) {
-       setIsFrozen(true);
-       return;
-    }
+    if (isEnd) { setIsFrozen(true); return; }
 
     if (isForever) {
        setActiveLoopType('forever');
        safeSetTimeout(() => setActiveLoopType(null), 4000);
     }
 
+    let loopCount = 1;
     if (repeatMatch) {
-       const count = parseInt(repeatMatch[1]);
+       loopCount = parseInt(repeatMatch[1]);
        setActiveLoopType('repeat');
-       setRepeatProgress({ current: 0, total: count });
-
-       // Async loop for progress bar
-       (async () => {
-           for(let i=1; i<=count; i++) {
-               await sleep(800);
-               setRepeatProgress({ current: i, total: count });
-           }
-           await sleep(1000);
-           setActiveLoopType(null);
-           setRepeatProgress(null);
-       })();
+       setRepeatProgress({ current: 0, total: loopCount });
     }
 
-    for (const cmd of actions) {
-        let duration = 600;
-        const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
-
-        if (cmd.match(/Repeat|Forever|End/i)) {
-            continue;
+    // === VÒNG LẶP CHÍNH (ĐÃ SỬA) ===
+    for (let i = 0; i < loopCount; i++) {
+        // Cập nhật thanh tiến trình
+        if (repeatMatch) {
+            setRepeatProgress({ current: i + 1, total: loopCount });
         }
 
-        if (waitMatch) {
-            const secsToWait = parseInt(waitMatch[1] || '1');
-            duration = 1000;
+        // Thực hiện từng lệnh trong chuỗi
+        for (const cmd of actions) {
+            let duration = 600;
+            const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
 
-            setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
+            if (cmd.match(/Repeat|Forever|End/i)) continue;
 
-            // Visual countdown for wait
-            if (setTimeLeft) {
-                const stepInterval = 100;
-                const steps = (secsToWait * 1000) / stepInterval;
-                const timePerStep = secsToWait / steps;
-                for(let i=0; i<steps; i++) {
-                    await sleep(stepInterval);
-                    setTimeLeft(prev => Math.max(0, prev - timePerStep));
+            if (waitMatch) {
+                const secsToWait = parseInt(waitMatch[1] || '1');
+                duration = 1000;
+                setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
+                
+                if (setTimeLeft) {
+                    const stepInterval = 100;
+                    const steps = (secsToWait * 1000) / stepInterval;
+                    const timePerStep = secsToWait / steps;
+                    for(let k=0; k<steps; k++) {
+                        await sleep(stepInterval);
+                        setTimeLeft(prev => Math.max(0, prev - timePerStep));
+                    }
+                } else {
+                    await sleep(secsToWait * 1000);
                 }
+                setCharacterState(prev => ({ ...prev, isWaiting: false }));
             } else {
-                await sleep(secsToWait * 1000);
-            }
+                if (cmd.match(/Hop|Jump/i)) duration = 700;
+                if (cmd.match(/Say|Think/i)) duration = 1200;
+                if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
+                if (cmd.match(/Friend|Message|Send|Receive/i)) duration = 1000;
+                if (cmd.match(/Bump/i)) duration = 1000;
+                if (cmd.match(/Color|Change/i)) duration = 800;
+                if (cmd.match(/Turn/i)) duration = 500;
+                if (cmd.match(/Go Home/i)) duration = 800;
+                if (cmd.match(/Page/i)) duration = 1000;
+                if (cmd.match(/Tap/i)) duration = 500;
+                if (cmd.match(/Stop/i)) duration = 500;
 
-            setCharacterState(prev => ({ ...prev, isWaiting: false }));
-        } else {
-            if (cmd.match(/Hop|Jump/i)) duration = 700;
-            if (cmd.match(/Say|Think/i)) duration = 1200;
-            if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
-            if (cmd.match(/Friend|Message/i)) duration = 1000;
-            if (cmd.match(/Color|Change/i)) duration = 800;
-            if (cmd.match(/Turn/i)) duration = 500;
-            if (cmd.match(/Go Home/i)) duration = 800;
-
-            const newStatus = processSingleCommand(cmd);
-            if (newStatus !== 'current') {
-                setCharacterState(prev => ({ ...prev, status: newStatus }));
+                const newStatus = processSingleCommand(cmd);
+                if (newStatus !== 'current') {
+                    setCharacterState(prev => ({ ...prev, status: newStatus }));
+                }
+                await sleep(duration);
+                
+                // Clean up temporary effects
+                setCharacterState(prev => ({ ...prev, tapEffect: false }));
             }
-            await sleep(duration);
         }
+        // Nghỉ một chút giữa các vòng lặp (nếu lặp)
+        if (loopCount > 1) await sleep(500);
     }
 
-    // Reset status after sequence
-    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null }));
+    // Cleanup sau khi chạy xong hết
+    setActiveLoopType(null);
+    setRepeatProgress(null);
+    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null, messageColor: null }));
   }, [processSingleCommand, safeSetTimeout]);
 
   return {
