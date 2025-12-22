@@ -5,6 +5,7 @@ import anime from 'animejs';
 
 import { levels } from '../../data/levels';
 import { audioManager } from '../../utils/audioManager';
+import { useCharacter } from '../../hooks/useCharacter';
 import ResultModal from '../UI/ResultModal';
 import SettingsModal from '../UI/SettingsModal';
 import GameControls from './GameControls';
@@ -117,7 +118,7 @@ const GameScreen = ({
   const [lowEffects, setLowEffects] = useState(false);
   const [fxDensity, setFxDensity] = useState(60);
 
-  const INITIAL_TIME = 30;
+  const INITIAL_TIME = 60;
   const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
   const [activeCharacterId, setActiveCharacterId] = useState(characterId || 'pink');
   
@@ -154,6 +155,26 @@ const GameScreen = ({
 
   const containerControls = useAnimation();
 
+  // USE CHARACTER HOOK
+  const playSfx = (filename) => {
+    audioManager.playSfx(filename);
+  };
+
+  const {
+    activeCharacterId: hookCharacterId, setActiveCharacterId: setHookCharacterId,
+    characterState: hookCharacterState, setCharacterState: setHookCharacterState,
+    activeLoopType: hookLoopType,
+    repeatProgress: hookRepeatProgress,
+    isFrozen: hookIsFrozen,
+    resetCharacter,
+    executeBlockAction,
+    clearAllTimeouts
+  } = useCharacter(characterId || 'pink', playSfx);
+
+  // Sync hook state to local state or use hook state directly
+  // Here we use hook state directly in GameMonitor, but we need to pass it down
+  // Note: activeCharacterId from hook should be used
+
   const activeLevelData = useMemo(() => {
      if (isReviewMode && wrongAnswers.length > 0) {
         const wId = wrongAnswers[0].id || wrongAnswers[0];
@@ -169,39 +190,15 @@ const GameScreen = ({
     setDisabledOptions([]);
   }, [currentLevel]);
 
-  const safeSetTimeout = (callback, delay) => {
-    const id = setTimeout(() => {
-      timeoutsRef.current = timeoutsRef.current.filter(tId => tId !== id);
-      callback();
-    }, delay);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
-  const safeSetInterval = (callback, delay) => {
-    const id = setInterval(callback, delay);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
-  const clearAllTimeouts = () => {
-    timeoutsRef.current.forEach(id => {
-      clearTimeout(id);
-      clearInterval(id);
-    });
-    timeoutsRef.current = [];
-  };
-
   useEffect(() => {
-    return () => clearAllTimeouts();
+    return () => {
+        timeoutsRef.current.forEach(id => clearTimeout(id));
+        clearAllTimeouts(); // Ensure hook timeouts are also cleared
+    };
   }, []);
 
-  const playSfx = (filename) => {
-    audioManager.playSfx(filename);
-  };
 
-  // Timer logic - No longer stops when Settings is Open, but we can keep that if desired.
-  // User asked for fix, but logic: Timer SHOULD pause on settings.
+  // Timer logic
   useEffect(() => {
     let timer;
     if (showSettings) return;
@@ -213,7 +210,7 @@ const GameScreen = ({
     } else if (timeLeft <= 0 && !modal) {
       setTimeLeft(0);
       playSfx('lose.mp3');
-      setModal({ type: 'gameover', message: 'Hết thời gian!\nBạn đã không hoàn thành nhiệm vụ kịp lúc.' });
+      setModal({ type: 'gameover', message: 'Time Up!\nYou did not complete the task.' });
     }
     return () => clearInterval(timer);
   }, [lives, modal, showSettings, timeLeft]);
@@ -230,8 +227,7 @@ const GameScreen = ({
            setWrongAnswers(save.wrongAnswers || []);
            setStats(save.stats || { correct: 0, wrong: 0, total: 10 });
            setLevelOrder(save.levelOrder || []);
-           if (save.characterId) setActiveCharacterId(save.characterId);
-           // if (save.powerUps) setInventory(save.powerUps); // Inventory is global now, don't overwrite from game save
+           if (save.characterId) setHookCharacterId(save.characterId);
         }
       } catch (e) {
         console.error("Load failed", e);
@@ -248,7 +244,6 @@ const GameScreen = ({
       setWrongAnswers([]);
       setStats({ correct: 0, wrong: 0, total: gameLevels.length });
       setIsReviewMode(false);
-      // Removed local powerUps reset to respect global inventory
     }
 
     resetCharacter();
@@ -263,34 +258,22 @@ const GameScreen = ({
      if (gameLevels.length > 0 && (stats.correct > 0 || stats.wrong > 0 || currentLevelIndex > 0)) {
         const saveData = {
           difficulty,
-          characterId: activeCharacterId,
+          characterId: hookCharacterId,
           levelIndex: currentLevelIndex,
           lives,
           scoreDetails,
           wrongAnswers,
           stats,
           levelOrder: levelOrder || gameLevels.map(l => l.id),
-          // powerUps - no longer saved here, managed globally
         };
         localStorage.setItem('scratch_game_save', JSON.stringify(saveData));
         if (!levelOrder && !loadGame) {
            setLevelOrder(gameLevels.map(l => l.id));
         }
      }
-  }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, activeCharacterId, stats, gameLevels, levelOrder, loadGame, modal]);
+  }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, hookCharacterId, stats, gameLevels, levelOrder, loadGame, modal]);
 
   const handleOpenGuide = () => { setShowSettings(false); setShowGuide(true); };
-
-  const resetCharacter = () => {
-    clearAllTimeouts();
-    setCharacterState({
-      x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null
-    });
-    setActiveLoopType(null);
-    setRepeatProgress(null);
-    setIsFrozen(false);
-    setActiveCharacterId(characterId || 'pink');
-  };
 
   const restartGame = () => {
     if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
@@ -298,26 +281,19 @@ const GameScreen = ({
     setRefreshKey(prev => prev + 1);
     setCurrentLevelIndex(0);
     setLives(5);
-    resetCharacter();
+    resetCharacter(characterId || 'pink'); // Reset and force back to initial if needed, or keep current
     setModal(null);
     setStats({ correct: 0, wrong: 0, total: gameLevels.length });
     setAnswerFeedback(null);
     setTimeLeft(INITIAL_TIME);
-    // setPowerUps({ hint: 1, skip: 1, heal: 1 }); // Controlled by global state now
     setIsReviewMode(false);
-  };
-
-  const getRandomCharacter = (excludeId) => {
-    const chars = ['pink', 'dude', 'owlet'];
-    const available = chars.filter(c => c !== excludeId);
-    return available[Math.floor(Math.random() * available.length)];
   };
 
   const handleManualSave = () => {
     if (gameLevels.length > 0) {
         const saveData = {
           difficulty,
-          characterId: activeCharacterId,
+          characterId: hookCharacterId,
           levelIndex: currentLevelIndex,
           lives,
           scoreDetails,
@@ -352,6 +328,10 @@ const GameScreen = ({
 
         playSfx('save.mp3');
     }
+  };
+
+  const handleResetGame = () => {
+      restartGame();
   };
 
   // --- POWER UP HANDLER ---
@@ -407,226 +387,8 @@ const GameScreen = ({
     }
   };
 
-
-  const processSingleCommand = (cmd) => {
-    const GRID_SIZE = 60;
-    const command = cmd.trim();
-    let actionStatus = 'idle';
-    
-    const moveMatch = command.match(/(?:Move )?(Right|Left|Up|Down|Forward|Backward)(?: (\d+))?/i);
-    const turnMatch = command.match(/Turn (Right|Left)(?: (\d+))?/i);
-    const hopMatch  = command.match(/Hop(?: (\d+))?/i);
-    const colorMatch = command.match(/Color|Change/i);
-    const friendMatch = command.match(/Friend|Message/i);
-    
-    setCharacterState((prev) => {
-      let next = { ...prev };
-      
-      if (command.match(/Fast/i))      next.speed = 3;
-      else if (command.match(/Slow/i)) next.speed = 0.5;
-      else if (command.match(/Reset Speed/i)) next.speed = 1;
-
-      if (moveMatch) {
-        const dir = moveMatch[1].toLowerCase();
-        const steps = parseInt(moveMatch[2] || '1');
-        const px = steps * GRID_SIZE;
-
-        if (dir === 'right') { next.x += px; next.rotation = 90; }
-        if (dir === 'left')  { next.x -= px; next.rotation = -90; }
-        if (dir === 'up')    { next.y += px; } // Up = 0 degree (Wait, in Stage.jsx 0 might be tricky, but logic holds)
-        if (dir === 'down')  { next.y -= px; } // Down doesn't change rotation
-        if (dir === 'go' && command.match(/Home/i)) { next.x = 0; next.y = 0; } // Go Home
-
-        next.x = Math.max(-460, Math.min(460, next.x));
-        next.y = Math.max(-240, Math.min(240, next.y));
-      }
-      else if (turnMatch) {
-        const dir = turnMatch[1].toLowerCase();
-        const steps = parseInt(turnMatch[2] || '1');
-        const deg = steps * 45; // 45 degrees per step
-        if (dir === 'right') next.rotation += deg;
-        if (dir === 'left') next.rotation -= deg;
-      }
-      else if (command.match(/Go Home/i)) {
-         next.x = 0; next.y = 0;
-      }
-      else if (hopMatch) {
-        // FIXED HOP: Now moves forward
-        const steps = parseInt(hopMatch[1] || '1'); // Default hop moves 1 block if not specified? Or 0? Let's say 1 for "jump forward"
-        const px = steps * GRID_SIZE;
-        const rad = (prev.rotation - 90) * (Math.PI / 180);
-
-        // Calculate forward vector
-        next.x += Math.round(Math.cos(rad)) * px;
-        next.y -= Math.round(Math.sin(rad)) * px;
-
-        next.x = Math.max(-460, Math.min(460, next.x));
-        next.y = Math.max(-240, Math.min(240, next.y));
-      }
-      else if (command.match(/Hide/i))   next.visible = false;
-      else if (command.match(/Show/i))   next.visible = true;
-      else if (command.match(/Grow/i)) { next.scale = Math.min(2, prev.scale + 0.5); if (next.scale > prev.scale) next.speechText = 'Grrr'; }
-      else if (command.match(/Shrink/i)) next.scale = Math.max(0.5, prev.scale - 0.3);
-      else if (command.match(/Reset/i))  { next.scale = 1; next.x = 0; next.y = 0; next.visible = true; next.speed = 1; next.friend = null; setActiveCharacterId(characterId || 'pink'); }
-      else if (colorMatch) {
-        next.rotation += 360; 
-        const newChar = getRandomCharacter(activeCharacterId);
-        setActiveCharacterId(newChar);
-      }
-      return next;
-    });
-
-    if (moveMatch) {
-      const dir = moveMatch[1].toLowerCase();
-      if (dir === 'up') { actionStatus = 'jump'; playSfx('jump.mp3'); }
-      else if (dir === 'down') { actionStatus = 'climb'; playSfx('climb.mp3'); }
-      else { actionStatus = 'move'; playSfx('move.mp3'); }
-    }
-    else if (hopMatch) { actionStatus = 'jump'; playSfx('jump.mp3'); }
-    else if (command.match(/Say|Think/i)) { actionStatus = 'say'; playSfx('pop.mp3'); }
-    
-    else if (friendMatch) {
-       actionStatus = 'throw';
-       playSfx('throw.mp3');
-       safeSetTimeout(() => {
-          setCharacterState(prev => {
-             const rad = (prev.rotation - 90) * (Math.PI / 180);
-             const friendX = prev.x + Math.round(Math.cos(rad)) * 80;
-             const friendY = prev.y - Math.round(Math.sin(rad)) * 80;
-             return {
-               ...prev,
-               friend: { 
-                 id: getRandomCharacter(activeCharacterId), 
-                 x: friendX, 
-                 y: friendY,
-                 visible: true 
-               }
-             };
-          });
-          playSfx('throw.mp3');
-       }, 500);
-    }
-
-    else if (command.match(/Send|Broadcast/i)) { actionStatus = 'throw'; playSfx('throw.mp3'); }
-    else if (command.match(/Flag/i)) { actionStatus = 'flag'; playSfx('flag.mp3'); }
-    else if (command.match(/Bump/i)) { actionStatus = 'push'; playSfx('bump.mp3'); }
-    else if (command.match(/Pop/i))  { playSfx('pop.mp3'); }
-
-    if (command.match(/Say|Think/i)) {
-       const text = command.replace(/Say|Think/i, '').trim() || 'Hi!';
-       setCharacterState(prev => ({ ...prev, speechText: text }));
-       safeSetTimeout(() => setCharacterState(p => ({...p, speechText: null})), 1000);
-    }
-
-    if (command.match(/Fast|Slow|Hide|Show|Grow|Shrink|Reset|Color|Change/i)) return 'current';
-    return actionStatus;
-  };
-
-  const executeBlockAction = (fullBlockText) => {
-    const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
-    let accumulatedDelay = 0;
-
-    // Check for Loop/Control commands first
-    const repeatMatch = fullBlockText.match(/Repeat (\d+)/i);
-    const isForever = fullBlockText.match(/Forever/i);
-    const isEnd = fullBlockText.match(/End/i);
-
-    if (isEnd) {
-       setIsFrozen(true);
-       return; // Stop execution
-    }
-
-    if (isForever) {
-       setActiveLoopType('forever');
-       // Forever visual effect plays for a while then stops to let user pass level
-       safeSetTimeout(() => setActiveLoopType(null), 4000);
-    }
-
-    if (repeatMatch) {
-       const count = parseInt(repeatMatch[1]);
-       setActiveLoopType('repeat');
-       setRepeatProgress({ current: 0, total: count });
-
-       // Simulate progress for visual feedback
-       let currentStep = 0;
-       const intervalTime = 800;
-       const totalDuration = count * intervalTime;
-
-       const progId = safeSetInterval(() => {
-          currentStep++;
-          setRepeatProgress({ current: currentStep, total: count });
-          if (currentStep >= count) {
-             clearInterval(progId);
-             safeSetTimeout(() => {
-                setActiveLoopType(null);
-                setRepeatProgress(null);
-             }, 1000);
-          }
-       }, intervalTime);
-
-       // Add extra delay to accumulatedDelay if needed, but since we run actions in parallel...
-       // Actually, we usually want actions to run repeatedly?
-       // But here 'Repeat 4' is a single block command. We just show the visual.
-    }
-
-
-    actions.forEach((cmd) => {
-      let duration = 600; 
-      const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
-
-      // Skip control commands in standard processing if handled above,
-      // but 'Wait' is handled here. 'Repeat', 'Forever', 'End' are handled above or just visual.
-      if (cmd.match(/Repeat|Forever|End/i)) {
-         duration = 500; // minimal delay for control blocks
-      }
-      else if (waitMatch) {
-        const secsToWait = parseInt(waitMatch[1] || '1');
-        duration = 1000; 
-        safeSetTimeout(() => {
-          setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
-          const stepInterval = 50;
-          const totalSteps = duration / stepInterval;
-          const timePerStep = secsToWait / totalSteps;
-          let stepCount = 0;
-          const intervalId = safeSetInterval(() => {
-            stepCount++;
-            setTimeLeft(prev => {
-                const newValue = prev - timePerStep;
-                return newValue > 0 ? newValue : 0;
-            });
-            if (stepCount >= totalSteps) { clearInterval(intervalId); }
-          }, stepInterval);
-        }, accumulatedDelay);
-        safeSetTimeout(() => {
-          setCharacterState(prev => ({ ...prev, isWaiting: false }));
-        }, accumulatedDelay + duration);
-      }
-      else {
-        if (cmd.match(/Hop|Jump/i)) duration = 700;
-        if (cmd.match(/Say|Think/i)) duration = 1200;
-        if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
-        if (cmd.match(/Friend|Message/i)) duration = 1000; 
-        if (cmd.match(/Color|Change/i)) duration = 800;
-        if (cmd.match(/Turn/i)) duration = 500;
-        if (cmd.match(/Go Home/i)) duration = 800;
-
-        safeSetTimeout(() => {
-           const newStatus = processSingleCommand(cmd);
-           if (newStatus !== 'current') {
-             setCharacterState(prev => ({ ...prev, status: newStatus }));
-           }
-        }, accumulatedDelay);
-      }
-      accumulatedDelay += duration;
-    });
-
-    safeSetTimeout(() => {
-      setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null }));
-    }, accumulatedDelay + 100);
-  };
-
   const buildSummaryMessage = (isWin) => {
-    return `${isWin ? 'Hoàn thành!' : 'Thất bại!'}\nĐúng: ${stats.correct} | Sai: ${stats.wrong}`;
+    return `${isWin ? 'Completed!' : 'Failed!'}\nCorrect: ${stats.correct} | Wrong: ${stats.wrong}`;
   };
 
   const goToNextLevel = () => {
@@ -641,7 +403,7 @@ const GameScreen = ({
        } else {
          if (wrongAnswers.length > 0) {
             setIsReviewMode(true);
-            setModal({ type: 'review_start', message: "Hãy sửa lại các lỗi sai để đạt điểm tuyệt đối!" });
+            setModal({ type: 'review_start', message: "Review Mode: Fix your mistakes for a perfect score!" });
          } else {
             finishGame();
          }
@@ -683,17 +445,16 @@ const GameScreen = ({
       setStats(prev => ({ ...prev, correct: newCorrect }));
       
       // Points Logic
-      // +10 Points per correct answer
       setTotalPoints(prev => prev + 10);
       
       // Floating text for points
       const pointEl = document.createElement('div');
-      pointEl.innerText = "+10 Điểm";
+      pointEl.innerText = "+10 Points";
       pointEl.style.position = 'absolute';
       pointEl.style.left = '50%';
       pointEl.style.top = '40%';
       pointEl.style.transform = 'translate(-50%, -50%)';
-      pointEl.style.color = '#fde047'; // yellow-300
+      pointEl.style.color = '#fde047';
       pointEl.style.fontWeight = 'bold';
       pointEl.style.fontSize = '2rem';
       pointEl.style.zIndex = 9999;
@@ -712,13 +473,11 @@ const GameScreen = ({
 
       if (isReviewMode) {
          setWrongAnswers(prev => prev.filter(w => w.id !== currentLevel.id));
-         // Recover score in Review Mode so user can get Perfect Score
          const currentScore = scoreDetails[difficulty] || 0;
          const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, currentScore + 1) };
          setScoreDetails(newScoreDetails);
          localStorage.setItem('scratch_game_scores', JSON.stringify(newScoreDetails));
       } else {
-         // Update score in Normal Mode
          const currentScore = scoreDetails[difficulty] || 0;
          const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, currentScore + 1) };
          setScoreDetails(newScoreDetails);
@@ -726,7 +485,10 @@ const GameScreen = ({
       }
 
       setAnswerFeedback({ status: 'correct', selectedId: blockId, correctId: currentLevel.correctBlockId });
-      executeBlockAction(selectedBlock.text);
+
+      // Execute via hook
+      executeBlockAction(selectedBlock.text, setTimeLeft);
+
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
       
       const actionCount = selectedBlock.text.split('->').length;
@@ -734,7 +496,7 @@ const GameScreen = ({
       const friendCount = (selectedBlock.text.match(/Friend/g) || []).length;
       const waitTime = Math.max(2500, (actionCount * 900) + (waitCount * 200) + (friendCount * 500));
       
-      feedbackTimeoutRef.current = setTimeout(goToNextLevel, waitTime);
+      feedbackTimeoutRef.current = setTimeout(goToNextLevel, waitTime + 10000); // Fixed 10s wait + anim time
     } else {
       setStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
       if (!isReviewMode) {
@@ -822,12 +584,12 @@ const GameScreen = ({
                     isDark={isDark} 
                     difficulty={difficulty} 
                     currentLevelIndex={currentLevelIndex} 
-                    characterState={characterState} 
-                    characterId={activeCharacterId}
+                    characterState={hookCharacterState}
+                    characterId={hookCharacterId}
                     timeLeft={timeLeft}
-                    activeLoopType={activeLoopType}
-                    repeatProgress={repeatProgress}
-                    isFrozen={isFrozen}
+                    activeLoopType={hookLoopType}
+                    repeatProgress={hookRepeatProgress}
+                    isFrozen={hookIsFrozen}
                 />
               </motion.div>
             </div>
@@ -850,13 +612,12 @@ const GameScreen = ({
             toggleLowEffects={()=>setLowEffects(v=>!v)}
             fxDensity={fxDensity}
             onChangeFxDensity={setFxDensity}
-            setUiScale={setUiScale}
-            uiScale={uiScale}
             bgmVolume={bgmVolume}
             setBgmVolume={setBgmVolume}
             sfxVolume={sfxVolume}
             setSfxVolume={setSfxVolume}
             onSaveGame={handleManualSave}
+            onResetGame={handleResetGame}
           />
         )}
         {modal && !showSettings && (

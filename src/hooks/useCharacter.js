@@ -18,7 +18,9 @@ export const useCharacter = (initialId, playSfx) => {
     speed: 1,
     waitTimer: null,
     isWaiting: false,
-    friend: null
+    friend: null,
+    messageColor: null, // 'red', 'blue', 'green'
+    tapEffect: false
   });
 
   const [activeLoopType, setActiveLoopType] = useState(null);
@@ -36,17 +38,8 @@ export const useCharacter = (initialId, playSfx) => {
     return id;
   };
 
-  const safeSetInterval = (callback, delay) => {
-    const id = setInterval(callback, delay);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
   const clearAllTimeouts = () => {
-    timeoutsRef.current.forEach(id => {
-      clearTimeout(id);
-      clearInterval(id);
-    });
+    timeoutsRef.current.forEach(id => clearTimeout(id));
     timeoutsRef.current = [];
   };
 
@@ -57,7 +50,7 @@ export const useCharacter = (initialId, playSfx) => {
   const resetCharacter = (resetId = null) => {
     clearAllTimeouts();
     setCharacterState({
-      x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null
+      x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null, messageColor: null, tapEffect: false
     });
     setActiveLoopType(null);
     setRepeatProgress(null);
@@ -80,7 +73,10 @@ export const useCharacter = (initialId, playSfx) => {
     const turnMatch = command.match(/Turn (Right|Left)(?: (\d+))?/i);
     const hopMatch  = command.match(/Hop(?: (\d+))?/i);
     const colorMatch = command.match(/Color|Change/i);
-    const friendMatch = command.match(/Friend|Message/i);
+    const friendMatch = command.match(/Friend|Message|Send|Receive/i);
+    const stopMatch = command.match(/Stop/i);
+    const pageMatch = command.match(/Page|Go To Page/i);
+    const tapMatch = command.match(/Tap|Start on Tap/i);
 
     setCharacterState((prev) => {
       let next = { ...prev };
@@ -132,6 +128,12 @@ export const useCharacter = (initialId, playSfx) => {
         const newChar = getRandomCharacter(activeCharacterId);
         setActiveCharacterId(newChar);
       }
+
+      // Tap Effect
+      if (tapMatch) {
+         next.tapEffect = true;
+      }
+
       return next;
     });
 
@@ -145,8 +147,19 @@ export const useCharacter = (initialId, playSfx) => {
     else if (command.match(/Say|Think/i)) { actionStatus = 'say'; playSfx('pop.mp3'); }
 
     else if (friendMatch) {
-       actionStatus = 'throw';
-       playSfx('throw.mp3');
+       // Logic for Message Color
+       let msgColor = 'white';
+       if (command.match(/Red/i)) msgColor = 'red';
+       if (command.match(/Blue/i)) msgColor = 'blue';
+       if (command.match(/Green/i)) msgColor = 'green';
+       if (command.match(/Yellow/i)) msgColor = 'yellow';
+
+       setCharacterState(prev => ({ ...prev, messageColor: msgColor }));
+
+       actionStatus = 'throw'; // Reuse throw animation for sending/receiving
+       playSfx('send.mp3');
+
+       // Spawn friend/receiver after delay
        safeSetTimeout(() => {
           setCharacterState(prev => {
              const rad = (prev.rotation - 90) * (Math.PI / 180);
@@ -158,18 +171,48 @@ export const useCharacter = (initialId, playSfx) => {
                  id: getRandomCharacter(activeCharacterId),
                  x: friendX,
                  y: friendY,
-                 visible: true
+                 visible: true,
+                 isAttacking: command.match(/Bump/i) // Flag for attack if bump
                }
              };
           });
-          playSfx('throw.mp3');
+          playSfx('send.mp3'); // Or receive sound
        }, 500);
     }
 
-    else if (command.match(/Send|Broadcast/i)) { actionStatus = 'throw'; playSfx('throw.mp3'); }
+    else if (command.match(/Bump/i)) {
+        actionStatus = 'say'; // Use 'say' (attack frame) for bump
+        playSfx('bump.mp3');
+        // Trigger friend to appear and attack back
+        safeSetTimeout(() => {
+           setCharacterState(prev => {
+             const rad = (prev.rotation - 90) * (Math.PI / 180);
+             const friendX = prev.x + Math.round(Math.cos(rad)) * 60; // Closer for bump
+             const friendY = prev.y - Math.round(Math.sin(rad)) * 60;
+             return {
+               ...prev,
+               friend: {
+                 id: getRandomCharacter(activeCharacterId),
+                 x: friendX,
+                 y: friendY,
+                 visible: true,
+                 isAttacking: true
+               }
+             };
+          });
+        }, 200);
+    }
     else if (command.match(/Flag/i)) { actionStatus = 'flag'; playSfx('flag.mp3'); }
-    else if (command.match(/Bump/i)) { actionStatus = 'push'; playSfx('bump.mp3'); }
     else if (command.match(/Pop/i))  { playSfx('pop.mp3'); }
+    else if (pageMatch) {
+        // Page Flip Effect
+        actionStatus = 'flag';
+        playSfx('page.mp3');
+    }
+    else if (stopMatch) {
+        // Stop animation
+        playSfx('stop.mp3');
+    }
 
     if (command.match(/Say|Think/i)) {
        const text = command.replace(/Say|Think/i, '').trim() || 'Hi!';
@@ -185,7 +228,6 @@ export const useCharacter = (initialId, playSfx) => {
   const executeBlockAction = async (fullBlockText, setTimeLeft) => {
     const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
 
-    // Check for Loop/Control commands first
     const repeatMatch = fullBlockText.match(/Repeat (\d+)/i);
     const isForever = fullBlockText.match(/Forever/i);
     const isEnd = fullBlockText.match(/End/i);
@@ -205,7 +247,6 @@ export const useCharacter = (initialId, playSfx) => {
        setActiveLoopType('repeat');
        setRepeatProgress({ current: 0, total: count });
 
-       // Async loop for progress bar
        (async () => {
            for(let i=1; i<=count; i++) {
                await sleep(800);
@@ -222,18 +263,14 @@ export const useCharacter = (initialId, playSfx) => {
         const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
 
         if (cmd.match(/Repeat|Forever|End/i)) {
-            // These don't block the sequence in this simplified interpreter
-            // They run in parallel visually (see above) or are instantaneous
             continue;
         }
 
         if (waitMatch) {
             const secsToWait = parseInt(waitMatch[1] || '1');
             duration = 1000;
-
             setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
 
-            // Visual countdown for wait (approximate)
             if (setTimeLeft) {
                 const stepInterval = 100;
                 const steps = (secsToWait * 1000) / stepInterval;
@@ -245,27 +282,32 @@ export const useCharacter = (initialId, playSfx) => {
             } else {
                 await sleep(secsToWait * 1000);
             }
-
             setCharacterState(prev => ({ ...prev, isWaiting: false }));
         } else {
             if (cmd.match(/Hop|Jump/i)) duration = 700;
             if (cmd.match(/Say|Think/i)) duration = 1200;
             if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
-            if (cmd.match(/Friend|Message/i)) duration = 1000;
+            if (cmd.match(/Friend|Message|Send|Receive/i)) duration = 1000;
+            if (cmd.match(/Bump/i)) duration = 1000;
             if (cmd.match(/Color|Change/i)) duration = 800;
             if (cmd.match(/Turn/i)) duration = 500;
             if (cmd.match(/Go Home/i)) duration = 800;
+            if (cmd.match(/Page/i)) duration = 1000;
+            if (cmd.match(/Tap/i)) duration = 500;
+            if (cmd.match(/Stop/i)) duration = 500;
 
             const newStatus = processSingleCommand(cmd);
             if (newStatus !== 'current') {
                 setCharacterState(prev => ({ ...prev, status: newStatus }));
             }
             await sleep(duration);
+
+            // Clean up temporary effects
+            setCharacterState(prev => ({ ...prev, tapEffect: false }));
         }
     }
 
-    // Reset status after sequence
-    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null }));
+    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null, messageColor: null }));
   };
 
   return {

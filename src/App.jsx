@@ -59,7 +59,8 @@ function App() {
     // Preload common SFX
     audioManager.preloadSfx([
       'bg.mp3', 'climb.mp3', 'hurt.mp3', 'jump.mp3',
-      'lose.mp3', 'move.mp3', 'pop.mp3', 'win.mp3'
+      'lose.mp3', 'move.mp3', 'pop.mp3', 'win.mp3',
+      'page.mp3', 'stop.mp3'
     ]);
 
     // Handle Autoplay Policy: Retry playing on first interaction

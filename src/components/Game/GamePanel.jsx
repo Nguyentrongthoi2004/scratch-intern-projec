@@ -1,5 +1,5 @@
 // src/components/Game/GamePanel.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Block from '../Block/Block';
 import { IconHeart, IconEye, IconRocket } from '../UI/Icons';
 
@@ -19,6 +19,12 @@ const GamePanel = React.memo(({
 }) => {
   const isDark = theme === 'dark';
   const isInFeedback = !!answerFeedback;
+  const [showHint, setShowHint] = useState(false);
+
+  // Reset showHint when level changes
+  useEffect(() => {
+    setShowHint(false);
+  }, [currentLevel]);
 
   // Khung tablet ngoài – viền gradient + shadow
   const frameShadow = isDark
@@ -177,13 +183,25 @@ const GamePanel = React.memo(({
                 </p>
               </div>
 
-              <p
-                className={`mt-2 ml-1 flex items-center gap-2 text-[11px] font-medium opacity-75 ${currentTheme.textSub}`}
-              >
-                <span className="text-yellow-400 animate-pulse">💡</span>
-                {currentLevel.hint ||
-                  'Gợi ý: Hãy quan sát kỹ đường đi của nhân vật trước khi chọn block.'}
-              </p>
+              {/* HINT SECTION */}
+              <div className="mt-3 ml-1">
+                 {!showHint ? (
+                    <button
+                       onClick={() => setShowHint(true)}
+                       className="flex items-center gap-2 text-[11px] font-bold text-yellow-400 hover:text-yellow-300 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-yellow-500/30 hover:border-yellow-400/50 transition-all active:scale-95"
+                    >
+                       <span className="text-sm">💡</span>
+                       <span>XEM GỢI Ý / SHOW HINT</span>
+                    </button>
+                 ) : (
+                    <div className="animate-fade-in flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                       <span className="mt-0.5 text-sm">💡</span>
+                       <p className={`text-[11px] font-medium opacity-90 ${currentTheme.textSub}`}>
+                          {currentLevel.hint || 'Gợi ý: Hãy quan sát kỹ đường đi của nhân vật trước khi chọn block.'}
+                       </p>
+                    </div>
+                 )}
+              </div>
             </div>
 
             {/* DANH SÁCH BLOCK */}
