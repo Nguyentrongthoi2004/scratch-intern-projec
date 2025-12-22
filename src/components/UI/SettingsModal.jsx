@@ -117,6 +117,7 @@ const SettingsModal = ({
   onOpenGuide,
   bgmVolume = 50, setBgmVolume = () => {}, 
   sfxVolume = 50, setSfxVolume = () => {},
+  onSaveGame // New Prop
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [mounted, setMounted] = useState(false);
@@ -243,6 +244,22 @@ const SettingsModal = ({
                            <div className="p-3 mt-4 border rounded bg-black/30 border-white/5">
                                 <p className="text-[10px] text-yellow-500/80 font-mono">⚠ Note: Zoom feature disabled for UI consistency.</p>
                            </div>
+
+                           {/* MANUAL SAVE BUTTON */}
+                           {onSaveGame && (
+                             <div className="mt-6">
+                                <button
+                                  onClick={onSaveGame}
+                                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 text-white font-bold uppercase tracking-[0.15em] shadow-lg shadow-emerald-900/40 border border-emerald-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+                                >
+                                    <span>💾</span> SAVE GAME PROGRESS
+                                </button>
+                                <p className="mt-2 text-[9px] text-center text-slate-500">
+                                    Dữ liệu game sẽ được lưu vào trình duyệt.
+                                </p>
+                             </div>
+                           )}
+
                          </div>
                        </div>
                      </motion.div>

@@ -145,15 +145,18 @@ const ResultModal = ({ type, message, stats, scoreDetails, isGoldenWin, onHome, 
                      <div className="space-y-2 text-[12px]">
                         <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/80">
                            <span className="font-semibold text-emerald-300">EASY</span>
-                           <span className="font-bold text-white">{scoreDetails.easy} / 10</span>
+                           <span className="font-bold text-white">{scoreDetails.easy || 0} / 10</span>
                         </div>
                         <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/80">
                            <span className="font-semibold text-yellow-300">NORMAL</span>
-                           <span className="font-bold text-white">{scoreDetails.normal} / 10</span>
+                           <span className="font-bold text-white">{scoreDetails.normal || 0} / 10</span>
                         </div>
                         <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/80">
                            <span className="font-semibold text-rose-300">HARD</span>
-                           <span className="font-bold text-white">{scoreDetails.hard} / 10</span>
+                           <span className="font-bold text-white">{scoreDetails.hard || 0} / 10</span>
+                        </div>
+                        <div className="mt-2 text-[10px] text-center text-slate-400 italic">
+                            (Tiến độ từng mức độ khó)
                         </div>
                      </div>
                      {isGoldenWin && (

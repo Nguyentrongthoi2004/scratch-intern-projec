@@ -313,6 +313,47 @@ const GameScreen = ({
     return available[Math.floor(Math.random() * available.length)];
   };
 
+  const handleManualSave = () => {
+    if (gameLevels.length > 0) {
+        const saveData = {
+          difficulty,
+          characterId: activeCharacterId,
+          levelIndex: currentLevelIndex,
+          lives,
+          scoreDetails,
+          wrongAnswers,
+          stats,
+          levelOrder: levelOrder || gameLevels.map(l => l.id),
+        };
+        localStorage.setItem('scratch_game_save', JSON.stringify(saveData));
+
+        // Visual Feedback
+        const saveEl = document.createElement('div');
+        saveEl.innerText = "GAME SAVED!";
+        saveEl.style.position = 'absolute';
+        saveEl.style.left = '50%';
+        saveEl.style.top = '20%';
+        saveEl.style.transform = 'translate(-50%, -50%)';
+        saveEl.style.color = '#4ade80';
+        saveEl.style.fontWeight = 'black';
+        saveEl.style.fontSize = '2rem';
+        saveEl.style.zIndex = 99999;
+        saveEl.style.textShadow = '0 0 20px rgba(0,0,0,0.8)';
+        document.body.appendChild(saveEl);
+
+        anime({
+            targets: saveEl,
+            translateY: -50,
+            opacity: [1, 0],
+            duration: 2000,
+            easing: 'easeOutExpo',
+            complete: () => document.body.removeChild(saveEl)
+        });
+
+        playSfx('win.mp3');
+    }
+  };
+
   // --- POWER UP HANDLER ---
   const handleUsePowerUp = (type) => {
     if (inventory[type] <= 0) return;
@@ -424,7 +465,7 @@ const GameScreen = ({
       }
       else if (command.match(/Hide/i))   next.visible = false;
       else if (command.match(/Show/i))   next.visible = true;
-      else if (command.match(/Grow/i))   next.scale = Math.min(2, prev.scale + 0.5);
+      else if (command.match(/Grow/i)) { next.scale = Math.min(2, prev.scale + 0.5); if (next.scale > prev.scale) next.speechText = 'Grrr'; }
       else if (command.match(/Shrink/i)) next.scale = Math.max(0.5, prev.scale - 0.3);
       else if (command.match(/Reset/i))  { next.scale = 1; next.x = 0; next.y = 0; next.visible = true; next.speed = 1; next.friend = null; setActiveCharacterId(characterId || 'pink'); }
       else if (colorMatch) {
@@ -672,12 +713,14 @@ const GameScreen = ({
       if (isReviewMode) {
          setWrongAnswers(prev => prev.filter(w => w.id !== currentLevel.id));
          // Recover score in Review Mode so user can get Perfect Score
-         const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, scoreDetails[difficulty] + 1) };
+         const currentScore = scoreDetails[difficulty] || 0;
+         const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, currentScore + 1) };
          setScoreDetails(newScoreDetails);
          localStorage.setItem('scratch_game_scores', JSON.stringify(newScoreDetails));
       } else {
          // Update score in Normal Mode
-         const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, scoreDetails[difficulty] + 1) };
+         const currentScore = scoreDetails[difficulty] || 0;
+         const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, currentScore + 1) };
          setScoreDetails(newScoreDetails);
          localStorage.setItem('scratch_game_scores', JSON.stringify(newScoreDetails));
       }
@@ -813,6 +856,7 @@ const GameScreen = ({
             setBgmVolume={setBgmVolume}
             sfxVolume={sfxVolume}
             setSfxVolume={setSfxVolume}
+            onSaveGame={handleManualSave}
           />
         )}
         {modal && !showSettings && (
