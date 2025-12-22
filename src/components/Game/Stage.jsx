@@ -15,7 +15,6 @@ const CHAR_CONFIG = {
     throw:  { fileName: 'Pink_Monster_Throw_4.png', frames: 4 },
     push:   { fileName: 'Pink_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
     flag:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 },
-    // Dùng ảnh Idle cho Turn (xoay)
     turn:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 }
   },
   dude: {
@@ -86,15 +85,8 @@ const Stage = ({
 
   // Xoay toàn bộ khung hình
   let cssRotation = `rotate(${rotation - 90}deg)`;
-  
-  // Logic lật hình:
-  // Nếu status là Turn -> Không lật (vì Turn xoay cả khung div)
-  // Nếu status khác -> Lật scaleX(-1) nếu facing left
   let cssScaleX = 1; 
-  // (Lưu ý: Logic rotate ở trên div cha đã xử lý việc xoay, 
-  // nhưng nếu bạn muốn lật gương ảnh khi đi trái phải theo trục dọc thì xử lý ở đây)
-  // Trong code này ta đang xoay cả div cha, nên scaleX giữ nguyên là 1
-  
+
   const isThinking = useMemo(() => {
     if (!speechText) return false;
     return speechText.includes('...') || speechText === 'Zzz' || speechText === 'Hmm' || speechText.startsWith('(');
@@ -125,13 +117,14 @@ const Stage = ({
   const animDuration = `${baseAnimSpeed / speed}s`;
   const moveDuration = `${0.6 / speed}s`;
 
+  // --- STYLE CHÍNH CỦA NHÂN VẬT ---
   const characterStyle = useMemo(() => ({
     top: '50%', left: '50%',
     transition: isFrozen ? 'none' : `transform ${moveDuration} cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease`,
     transform: `translate3d(-50%, -100%, 0) translate3d(${x}px, ${y * -1}px, 0) scale3d(${cssScaleX * (visible ? scale : 0)}, ${visible ? scale : 0}, 1) ${cssRotation}`,
     opacity: visible ? 1 : 0,
-    filter: `drop-shadow(0 4px 6px rgba(0,0,0,0.3))`
-  }), [x, y, cssScaleX, scale, visible, cssRotation, moveDuration, isFrozen]);
+    filter: status === 'teleport' ? 'brightness(200%) blur(5px)' : `drop-shadow(0 4px 6px rgba(0,0,0,0.3))` // Teleport visual
+  }), [x, y, cssScaleX, scale, visible, cssRotation, moveDuration, isFrozen, status]);
 
   const friendStyle = useMemo(() => {
     if (!friend) return {};
@@ -154,12 +147,17 @@ const Stage = ({
 
   // New Effects for Page and Stop
   const pageFlash = status === 'page' ? (
-     <div className="absolute inset-0 z-[60] bg-white animate-flash pointer-events-none"></div>
+     <div className="absolute inset-0 z-[60] bg-white animate-flash pointer-events-none mix-blend-overlay"></div>
+  ) : null;
+
+  // Teleport effect (Go Home)
+  const teleportFlash = status === 'teleport' ? (
+      <div className="absolute inset-0 z-[60] bg-cyan-400/30 animate-flash pointer-events-none"></div>
   ) : null;
 
   const stopOverlay = status === 'stop' ? (
-     <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none animate-fade-in">
-        <div className="w-32 h-32 bg-red-600 border-4 border-white shadow-[0_0_40px_rgba(220,38,38,0.8)] flex items-center justify-center transform rotate-12">
+     <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none animate-fade-in">
+        <div className="w-32 h-32 bg-red-600 border-4 border-white shadow-[0_0_40px_rgba(220,38,38,0.8)] flex items-center justify-center transform rotate-12 animate-pop-in">
             <span className="text-4xl font-black text-white uppercase">STOP</span>
         </div>
      </div>
@@ -172,7 +170,7 @@ const Stage = ({
   
   // --- TAP EFFECT ---
   const tapVisual = tapEffect ? (
-      <div className="absolute z-50 w-20 h-20 -translate-x-1/2 -translate-y-1/2 border-4 border-yellow-400 rounded-full top-1/2 left-1/2 animate-ping"></div>
+      <div className="absolute z-50 w-32 h-32 -translate-x-1/2 -translate-y-1/2 border-8 border-yellow-300 rounded-full top-1/2 left-1/2 animate-ping opacity-80"></div>
   ) : null;
 
   // Determine message envelope color class
@@ -192,6 +190,7 @@ const Stage = ({
     `}>
       {freezeOverlay}
       {pageFlash}
+      {teleportFlash}
       {stopOverlay}
       {bumpEffect}
       {tapVisual}
@@ -294,7 +293,11 @@ const Stage = ({
 
         {(status === 'throw' || status === 'push') && (
            messageColor ? (
-               <div className={`absolute flex items-center justify-center w-10 h-10 -top-8 -right-8 animate-bounce z-20 ${getEnvelopeColorClass(messageColor)}`}>
+               <div
+                 className={`absolute flex items-center justify-center w-10 h-10 -top-8 -right-8 z-20 ${getEnvelopeColorClass(messageColor)}`}
+                 // Animation bay ra xa
+                 style={{ animation: 'fly-out 0.8s ease-out forwards' }}
+               >
                    <IconMail className="w-full h-full" />
                </div>
            ) : (
@@ -302,6 +305,15 @@ const Stage = ({
                   <span>💥</span>
                </div>
            )
+        )}
+
+        {/* Visual for Receiving Message (Read) */}
+        {status === 'read' && (
+             <div className="absolute z-30 -translate-x-1/2 -top-16 left-1/2 animate-bounce">
+                <div className={`flex items-center justify-center w-12 h-10 bg-white border-2 border-cyan-500 rounded shadow-[0_0_15px_rgba(34,211,238,0.6)]`}>
+                   <IconMail className="w-8 h-8 text-cyan-600" />
+                </div>
+             </div>
         )}
 
         {speechText && visible && (
@@ -320,6 +332,15 @@ const Stage = ({
           </div>
         )}
       </div>
+
+      {/* Global Styles for Animations */}
+      <style>{`
+        @keyframes fly-out {
+          0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+          20% { opacity: 1; transform: translate(10px, -10px) scale(1); }
+          100% { transform: translate(60px, -60px) scale(0.8); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };

@@ -12,7 +12,6 @@ export const useSmoothMotion = (targetX, targetY, speed = 5) => {
   useEffect(() => {
     const animate = (time) => {
       if (!lastTimeRef.current) lastTimeRef.current = time;
-      const deltaTime = (time - lastTimeRef.current) / 1000; // Đổi sang giây
       lastTimeRef.current = time;
 
       setVisualPos(prev => {
@@ -21,9 +20,9 @@ export const useSmoothMotion = (targetX, targetY, speed = 5) => {
           return { x: targetX, y: targetY };
         }
 
-        // Công thức Delta Time: Vị trí mới = Vị trí cũ + (Khoảng cách * Tốc độ * dt)
         // Dùng Lerp để tạo cảm giác trượt mượt mà (Ease-out)
-        const moveFactor = Math.min(speed * deltaTime * 60, 1); // *60 để cân bằng với 60FPS
+        // Lưu ý: speed ở đây được dùng trong dependency để trigger effect,
+        // nhưng logic lerp hiện tại dùng hằng số 0.15 cho độ mượt.
         
         return {
           x: lerp(prev.x, targetX, 0.15), // 0.15 là độ mượt (càng nhỏ càng trượt)

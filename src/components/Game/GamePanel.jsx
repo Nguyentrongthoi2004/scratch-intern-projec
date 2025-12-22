@@ -156,8 +156,8 @@ const GamePanel = React.memo(({
             className={`flex flex-col space-y-5 pr-2 custom-scrollbar ${
               answerFeedback ? 'overflow-hidden' : 'overflow-y-auto'
             }`}
-            // Reduced height to make room for PowerUps + Button
-            style={{ height: 'calc(100% - 150px)' }}
+            // Reduced height to make room for PowerUps (removed button area)
+            style={{ height: 'calc(100% - 100px)' }}
           >
             {/* Nhiệm vụ */}
             <div>
@@ -309,17 +309,8 @@ const GamePanel = React.memo(({
              )}
           </div>
 
-          {/* VÙNG CHO NÚT TIẾP TỤC – CHIỀU CAO CỐ ĐỊNH */}
-          <div className="h-[50px] flex items-center justify-center">
-            {answerFeedback && (
-              <button
-                onClick={onSkipFeedback}
-                className="rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 px-9 py-3 text-[11px] font-extrabold uppercase tracking-[0.26em] text-slate-950 shadow-[0_14px_32px_rgba(16,185,129,0.7)] transition-all hover:brightness-110 hover:-translate-y-[1px] active:translate-y-0 active:shadow-[0_8px_20px_rgba(16,185,129,0.6)]"
-              >
-                TIẾP TỤC ▷
-              </button>
-            )}
-          </div>
+          {/* REMOVED REDUNDANT "TIẾP TỤC" BUTTON HERE */}
+
         </div>
       </div>
     </div>

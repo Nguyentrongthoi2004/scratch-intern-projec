@@ -24,6 +24,7 @@ export const useCharacter = (initialId, playSfx) => {
     speechText: null, 
     speed: 1, 
     isWaiting: false,
+    waitTimer: null, // Thêm state để hiển thị countdown
     friend: null, 
     messageColor: null, 
     tapEffect: false
@@ -59,7 +60,7 @@ export const useCharacter = (initialId, playSfx) => {
     clearAllTimeouts();
     setCharacterState({
       x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, 
-      speechText: null, speed: 1, isWaiting: false, 
+      speechText: null, speed: 1, isWaiting: false, waitTimer: null,
       friend: null, messageColor: null, tapEffect: false
     });
     setActiveLoopType(null);
@@ -166,6 +167,8 @@ export const useCharacter = (initialId, playSfx) => {
       else if (growMatch) {
           const amount = parseInt(growMatch[1] || '5'); 
           next.scale = Math.min(3, prev.scale + (amount / 10)); 
+          // FIX: Grow không nên trigger bong bóng thoại
+          next.speechText = null;
       }
       else if (shrinkMatch) {
           const amount = parseInt(shrinkMatch[1] || '5');
@@ -250,6 +253,8 @@ export const useCharacter = (initialId, playSfx) => {
        let msgColor = 'white';
        if (command.match(/Red/i)) msgColor = 'red';
        if (command.match(/Blue/i)) msgColor = 'blue';
+       if (command.match(/Green/i)) msgColor = 'green';
+       if (command.match(/Yellow|Orange/i)) msgColor = 'yellow';
        
        setCharacterState(prev => ({ ...prev, messageColor: msgColor }));
        actionStatus = 'throw';
@@ -282,18 +287,18 @@ export const useCharacter = (initialId, playSfx) => {
 
     const repeatMatch = fullBlockText.match(/Repeat (\d+)/i);
     const isForever = fullBlockText.match(/Forever/i);
-    const isEnd = fullBlockText.match(/bEnd/i);
+    // Fix Regex cho End
+    const isEnd = fullBlockText.match(/\bEnd\b/i) || fullBlockText.match(/^End$/i);
 
     // Xử lý END (Đóng băng)
     if (isEnd) { setIsFrozen(true); return; }
 
-    if (isForever) {
-       setActiveLoopType('forever');
-       safeSetTimeout(() => setActiveLoopType(null), 4000);
-    }
-
     let loopCount = 1;
-    if (repeatMatch) {
+    if (isForever) {
+       // Forever lặp lại nhiều lần (giả lập vô tận cho đến khi hết time)
+       loopCount = 999;
+       setActiveLoopType('forever');
+    } else if (repeatMatch) {
        loopCount = parseInt(repeatMatch[1]);
        setActiveLoopType('repeat');
        setRepeatProgress({ current: 0, total: loopCount });
@@ -301,6 +306,9 @@ export const useCharacter = (initialId, playSfx) => {
 
     // VÒNG LẶP CHÍNH
     for (let i = 0; i < loopCount; i++) {
+        // Nếu bị đóng băng giữa chừng (do Stop/End ở đâu đó), break
+        if (isFrozen) break;
+
         if (repeatMatch) {
             setRepeatProgress({ current: i + 1, total: loopCount });
         }
@@ -309,62 +317,63 @@ export const useCharacter = (initialId, playSfx) => {
             let duration = 600;
             const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
 
+            // Bỏ qua các từ khóa điều khiển luồng trong vòng lặp con
             if (cmd.match(/Repeat|Forever|End/i)) continue;
 
-            // XỬ LÝ LỆNH WAIT (FIX LỖI SỐ LẺ)
+            // XỬ LÝ LỆNH WAIT (FIX LỖI SỐ LẺ & HIỂN THỊ TIMER)
             if (waitMatch) {
                 const secsToWait = parseInt(waitMatch[1] || '1');
                 duration = 1000;
                 setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
                 
-                if (setTimeLeft) {
-                    const stepInterval = 100; // Cập nhật mỗi 0.1s
-                    const steps = (secsToWait * 1000) / stepInterval;
-                    const timePerStep = secsToWait / steps;
-                    
-                    for(let k=0; k<steps; k++) {
-                        await sleep(stepInterval);
-                        // Fix lỗi Floating Point: toFixed(2) rồi parse lại thành số
-                        setTimeLeft(prev => {
-                            const newVal = prev - timePerStep;
-                            return Math.max(0, parseFloat(newVal.toFixed(2)));
-                        });
-                    }
-                } else {
-                    await sleep(secsToWait * 1000);
+                // Hiển thị countdown timer cục bộ
+                for (let s = secsToWait; s > 0; s--) {
+                     setCharacterState(prev => ({ ...prev, waitTimer: s }));
+                     await sleep(1000); // Wait 1s
                 }
-                setCharacterState(prev => ({ ...prev, isWaiting: false }));
+                setCharacterState(prev => ({ ...prev, waitTimer: null, isWaiting: false }));
             } else {
                 // XỬ LÝ CÁC LỆNH KHÁC
-                // Set thời gian thực thi dựa trên loại hành động
                 if (cmd.match(/Hop|Jump/i)) duration = 700;
                 if (cmd.match(/Say|Think/i)) duration = 1500;
                 if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
-                if (cmd.match(/Friend|Message|Send|Receive/i)) duration = 1000;
-                if (cmd.match(/Bump|Stop|Page|Tap/i)) duration = 800; // Thời gian cho hiệu ứng mới
+
+                // Tăng duration cho Send để thấy hiệu ứng
+                if (cmd.match(/Friend|Message|Send/i)) duration = 1200;
+                // Giảm duration cho Receive để nó chuyển qua lệnh Move nhanh hơn nếu cần
+                if (cmd.match(/Receive/i)) duration = 600;
+
+                if (cmd.match(/Bump|Stop|Page|Tap/i)) duration = 1000;
                 if (cmd.match(/Go Home/i)) duration = 1000;
 
                 const newStatus = processSingleCommand(cmd);
                 
+                // Cập nhật status
                 if (newStatus !== 'current') {
                     setCharacterState(prev => ({ ...prev, status: newStatus }));
                 }
+
+                // Nếu là Stop, giữ trạng thái lâu hơn tí
+                if (newStatus === 'stop') {
+                    await sleep(1500);
+                } else {
+                    await sleep(duration);
+                }
                 
-                await sleep(duration);
-                
-                // Sau khi xong hành động, reset về trạng thái thường (trừ khi bị đóng băng)
+                // Sau khi xong hành động, reset về trạng thái thường
                 setCharacterState(prev => ({ ...prev, tapEffect: false }));
             }
         }
         // Nghỉ một chút giữa các vòng lặp
-        if (loopCount > 1) await sleep(500);
+        if (loopCount > 1 && i < loopCount - 1) await sleep(300);
     }
 
     // Kết thúc chuỗi lệnh
     setActiveLoopType(null);
     setRepeatProgress(null);
-    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null, messageColor: null }));
-  }, [processSingleCommand, safeSetTimeout]);
+    // Reset status về idle nếu không phải End/Stop
+    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null, messageColor: null, waitTimer: null }));
+  }, [processSingleCommand, safeSetTimeout, isFrozen]);
 
   return {
       activeCharacterId, setActiveCharacterId,

@@ -1,11 +1,10 @@
 import { memo } from 'react';
 import Stage from './Stage';
 import { IconClock } from '../UI/Icons';
-// Import hook xử lý chuyển động (đảm bảo file này đúng đường dẫn)
-import { useSmoothMotion } from './useSmoothMotion';
+// Import hook xử lý chuyển động (đã sửa đường dẫn)
+import { useSmoothMotion } from '../../hooks/useSmoothMotion';
 
 // --- 1. CÁC COMPONENT TRANG TRÍ (JOY-CON) ---
-// (Giữ nguyên phần JoyConLeft và JoyConRight như cũ vì không ảnh hưởng logic)
 const JoyConLeft = memo(() => {
   const btnBase = "relative w-10 h-10 rounded-full bg-gradient-to-b from-[#333] to-[#222] shadow-[0_3px_0_#111,inset_0_1px_1px_rgba(255,255,255,0.1)] flex items-center justify-center border border-white/5 active:translate-y-[3px] active:shadow-[0_1px_0_#111] transition-all";
   const arrowStyle = "text-[#666] text-[10px] font-black group-hover:text-cyan-300 drop-shadow-sm";
@@ -108,14 +107,7 @@ const GameMonitor = ({
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
-      {/* --- FIX LỖI ẢNH MỜ/STRETCH BẰNG CSS --- */}
-      <style jsx global>{`
-        .pixel-art-stage img, 
-        .pixel-art-stage div {
-          image-rendering: pixelated; /* Cho Chrome/Edge */
-          image-rendering: crisp-edges; /* Cho Firefox */
-        }
-      `}</style>
+      {/* Removed style jsx global */}
 
       {/* KHUNG MÁY SWITCH */}
       <div className="relative flex items-center justify-center ml-12 transition-transform duration-300 filter drop-shadow-[0_25px_25px_rgba(0,0,0,0.3)] hover:scale-[1.005] will-change-transform">
@@ -136,8 +128,8 @@ const GameMonitor = ({
           {/* KHUNG HIỂN THỊ GAME */}
           <div className="relative flex-1 overflow-hidden bg-black border-2 border-white/10 rounded-xl shadow-[0_0_30px_rgba(34,211,238,0.1)]">
             
-            {/* STAGE CONTAINER - Thêm class pixel-art-stage */}
-            <div className="relative flex items-center justify-center w-full h-full bg-slate-950 pixel-art-stage">
+            {/* STAGE CONTAINER - Thêm class pixel-art-stage và style trực tiếp */}
+            <div className="relative flex items-center justify-center w-full h-full bg-slate-950 pixel-art-stage" style={{ imageRendering: 'pixelated' }}>
               <Stage 
                   key={currentLevelIndex} 
                   
