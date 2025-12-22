@@ -101,16 +101,19 @@ const Stage = ({
   const animData = currentConfig[status] || currentConfig.idle;
   
   // Logic tính toán xoay và lật hình
-  const isFacingLeft = rotation === -90;
-  // Tính toán cssRotation dựa trên việc Sprite mặc định hướng sang phải (90 độ)
-  // Nếu rotation = 90 -> rotate(0deg)
-  // Nếu rotation = 0 -> rotate(-90deg) (Hướng lên)
-  // Nếu rotation = 135 -> rotate(45deg)
-  let cssRotation = '';
-  if (Math.abs(rotation) !== 90) {
+  // Update: Support 45 degree increments.
+  const normalizedRot = ((rotation % 360) + 360) % 360;
+  const isFacingLeft = normalizedRot > 90 && normalizedRot < 270;
+
+  let cssRotation = `rotate(${rotation - 90}deg)`;
+  let cssScaleX = 1;
+
+  if (isFacingLeft) {
+      // Use simple rotation for now as requested "Turn Left 45 deg".
+      // Flipping might cause issues with intermediate angles (45 deg)
+      cssScaleX = 1;
       cssRotation = `rotate(${rotation - 90}deg)`;
   }
-  const cssScaleX = isFacingLeft ? -1 : 1;
 
   // Logic hiển thị bong bóng chat
   const isThinking = useMemo(() => {
@@ -129,8 +132,15 @@ const Stage = ({
     // 1. Âm thanh nói chuyện
     if (speechText && typeof speechText === 'string') {
         if (lastPlayedText.current !== speechText) {
-            const popRegex = /\bpop\b/i;
-            if (popRegex.test(speechText)) audioManager.playSfx('pop.mp3');
+            // Only play pop if text explicitly says "Pop" or "Grr", or maybe just if it's NOT thinking?
+            // User requested to remove generic Pop sound for Say.
+            // Let's keep it minimal or only for specific keywords if needed.
+            // const popRegex = /\bpop\b/i;
+            // if (popRegex.test(speechText)) audioManager.playSfx('pop.mp3');
+            if (speechText === 'Grrr') {
+                 // Maybe a growl sound? defaulting to nothing or subtle pop
+                 // audioManager.playSfx('pop.mp3');
+            }
             lastPlayedText.current = speechText;
         }
     }
@@ -174,18 +184,17 @@ const Stage = ({
 
   // --- UI OVERLAY KHI GAME KẾT THÚC (END) ---
   const freezeOverlay = isFrozen ? (
-    <div className="absolute inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-fade-in">
-        <div className="p-3 px-6 bg-red-600 border-4 border-white shadow-[0_0_30px_rgba(220,38,38,0.5)] rounded-2xl animate-bounce">
-            <span className="text-2xl font-black tracking-widest text-white uppercase">STOPPED</span>
+    <div className="absolute inset-0 z-[100] bg-cyan-900/40 backdrop-blur-[1px] flex flex-col items-center justify-center animate-fade-in mix-blend-hard-light">
+        <div className="absolute inset-0 bg-[url('assets/images/ui/noise.svg')] opacity-20 pointer-events-none"></div>
+        <div className="p-3 px-8 bg-cyan-600/90 border-4 border-white shadow-[0_0_50px_rgba(34,211,238,0.8)] rounded-xl animate-pulse transform scale-125">
+             <span className="text-3xl font-black tracking-[0.2em] text-white uppercase drop-shadow-lg">❄ FROZEN ❄</span>
         </div>
-        <p className="mt-4 text-xs font-bold tracking-wider text-white uppercase opacity-80 animate-pulse">Chương trình đã dừng</p>
     </div>
   ) : null;
 
   return (
     <div className={`relative w-full h-full overflow-hidden border-4 border-slate-700 bg-slate-900 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-2xl font-mono 
         ${status === 'hurt' || status === 'push' ? 'animate-shake-impact' : ''}
-        ${isFrozen ? 'grayscale brightness-75' : ''} 
     `}>
       
       {/* 1. LỚP PHỦ ĐÓNG BĂNG (END BLOCK) */}
@@ -257,7 +266,7 @@ const Stage = ({
         <div className="relative w-full h-full overflow-hidden"
              style={{ animation: status === 'jump' && !isFrozen ? `bounce-arc ${moveDuration} infinite` : 'none' }}>
           <img src={`assets/images/characters/${safeId}/${animData.fileName}`} alt="Character"
-            className="absolute relative top-0 left-0 z-10 h-full max-w-none pixelated"
+            className={`absolute relative top-0 left-0 z-10 h-full max-w-none pixelated ${isFrozen ? 'brightness-150 contrast-125 hue-rotate-180 sepia' : ''}`}
             style={{ 
               width: `${animData.frames * 100}%`, 
               animation: `sprite-slide ${animDuration} steps(${animData.frames}) infinite`,
@@ -267,22 +276,23 @@ const Stage = ({
 
         {/* 🔥 8. CÁC HIỆU ỨNG ĐẶC BIỆT (FOREVER / REPEAT) - NẰM TRÊN ĐẦU NHÂN VẬT 🔥 */}
         <div className="absolute top-0 z-40 flex flex-col items-center w-full gap-1 -translate-x-1/2 -translate-y-full left-1/2" 
-             style={{ transform: isFacingLeft ? 'scaleX(-1)' : 'none' }}> {/* Lật ngược lại nếu nhân vật quay trái để icon không bị ngược */}
+             style={{ transform: `rotate(${-(rotation - 90)}deg)` }}> {/* Counter-rotate icons so they stay upright */}
             
             {/* A. HIỆU ỨNG FOREVER (Vô cực xoay) */}
             {activeLoopType === 'forever' && !isFrozen && (
-                <div className="relative flex items-center justify-center w-12 h-12">
-                    <div className="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 font-black animate-pulse filter drop-shadow-[0_0_5px_rgba(236,72,153,0.8)] pb-2">
+                <div className="relative flex items-center justify-center w-16 h-16 -mt-8">
+                    <div className="text-5xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 font-black animate-pulse filter drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] pb-2">
                         ∞
                     </div>
                     {/* Vòng xoay phát sáng bao quanh */}
-                    <div className="absolute inset-0 w-full h-full border-2 border-dashed rounded-full opacity-50 border-white/50 animate-spin-slow"></div>
+                    <div className="absolute inset-0 w-full h-full border-4 border-dotted rounded-full opacity-60 border-cyan-400/60 animate-spin-slow"></div>
+                    <div className="absolute inset-0 w-full h-full border-2 border-dashed rounded-full opacity-40 border-white/40 animate-reverse-spin"></div>
                 </div>
             )}
 
             {/* B. HIỆU ỨNG REPEAT (Thanh tiến trình tròn) */}
             {activeLoopType === 'repeat' && repeatProgress && !showCheckmark && !isFrozen && (
-                <div className="p-1 mb-2 border rounded-full shadow-lg bg-slate-800/90 backdrop-blur-sm border-cyan-500/50">
+                <div className="p-1.5 mb-2 border-2 rounded-full shadow-lg bg-slate-900/90 backdrop-blur-md border-cyan-400">
                     <ProgressRing current={repeatProgress.current} total={repeatProgress.total} />
                 </div>
             )}
@@ -314,7 +324,9 @@ const Stage = ({
         {speechText && visible && (
           <div className="absolute z-30 -translate-x-1/2 -top-16 left-1/2" style={{ transform: isFacingLeft ? 'scaleX(-1)' : 'none' }}>
             <div className={`relative px-4 py-2 text-xs font-bold text-cyan-950 ${bubbleBgColor} border-2 ${bubbleBorderColor} ${isThinking ? 'rounded-[20px]' : 'rounded-lg'} shadow-[0_0_15px_rgba(34,211,238,0.5)] min-w-[80px] text-center whitespace-nowrap animate-pop-in`}>
-              {speechText}
+              {/* Fix for "Grow" -> "Grr" logic if needed, but assuming speechText is passed correct */}
+              {speechText === 'Grrr' ? <span className="text-lg font-black text-red-600 uppercase tracking-widest shake">GRRR!</span> : speechText}
+
               {isThinking ? (
                  <>
                    <div className={`absolute -bottom-2 left-6 w-2 h-2 ${bubbleBgColor} border ${bubbleBorderColor} rounded-full`}></div>
