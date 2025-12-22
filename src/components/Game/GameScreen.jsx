@@ -350,7 +350,7 @@ const GameScreen = ({
             complete: () => document.body.removeChild(saveEl)
         });
 
-        playSfx('win.mp3');
+        playSfx('save.mp3');
     }
   };
 
@@ -433,7 +433,7 @@ const GameScreen = ({
 
         if (dir === 'right') { next.x += px; next.rotation = 90; }
         if (dir === 'left')  { next.x -= px; next.rotation = -90; }
-        if (dir === 'up')    { next.y += px; next.rotation = 0; } // Up = 0 degree (Wait, in Stage.jsx 0 might be tricky, but logic holds)
+        if (dir === 'up')    { next.y += px; } // Up = 0 degree (Wait, in Stage.jsx 0 might be tricky, but logic holds)
         if (dir === 'down')  { next.y -= px; } // Down doesn't change rotation
         if (dir === 'go' && command.match(/Home/i)) { next.x = 0; next.y = 0; } // Go Home
 
@@ -487,7 +487,7 @@ const GameScreen = ({
     
     else if (friendMatch) {
        actionStatus = 'throw';
-       playSfx('pop.mp3');
+       playSfx('throw.mp3');
        safeSetTimeout(() => {
           setCharacterState(prev => {
              const rad = (prev.rotation - 90) * (Math.PI / 180);
@@ -503,13 +503,13 @@ const GameScreen = ({
                }
              };
           });
-          playSfx('pop.mp3');
+          playSfx('throw.mp3');
        }, 500);
     }
-    
-    else if (command.match(/Send|Broadcast/i)) { actionStatus = 'throw'; playSfx('pop.mp3'); }
-    else if (command.match(/Flag/i)) { actionStatus = 'flag'; playSfx('pop.mp3'); }
-    else if (command.match(/Bump/i)) { actionStatus = 'push'; playSfx('pop.mp3'); }
+
+    else if (command.match(/Send|Broadcast/i)) { actionStatus = 'throw'; playSfx('throw.mp3'); }
+    else if (command.match(/Flag/i)) { actionStatus = 'flag'; playSfx('flag.mp3'); }
+    else if (command.match(/Bump/i)) { actionStatus = 'push'; playSfx('bump.mp3'); }
     else if (command.match(/Pop/i))  { playSfx('pop.mp3'); }
 
     if (command.match(/Say|Think/i)) {
