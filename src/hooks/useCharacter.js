@@ -93,7 +93,10 @@ export const useCharacter = (initialId, playSfx) => {
     const msgReceiveMatch = command.match(/Receive/i);
     const pageMatch = command.match(/Page|Go To Page/i);
     const tapMatch = command.match(/Tap|Start on Tap/i);
-    const stopMatch = command.match(/Stop/i);
+
+    // Stop phải match chính xác từ 'Stop'
+    const stopMatch = command.match(/^Stop$/i) || command.match(/\[Stop\]/i) || command.match(/\bStop\b/i);
+
     const bumpMatch = command.match(/Bump/i);
     const playSoundMatch = command.match(/Play Sound/i);
     const goHomeMatch = command.match(/Go Home/i);
@@ -287,8 +290,13 @@ export const useCharacter = (initialId, playSfx) => {
 
     const repeatMatch = fullBlockText.match(/Repeat (\d+)/i);
     const isForever = fullBlockText.match(/Forever/i);
-    // Fix Regex cho End
-    const isEnd = fullBlockText.match(/\bEnd\b/i) || fullBlockText.match(/^End$/i);
+
+    // STRICT END DETECTION: Iterate actions to find exact match
+    const isEnd = actions.some(action => {
+       const clean = action.replace(/[\[\]]/g, '').trim();
+       // Match "End" or "End Game" exactly, case insensitive
+       return clean.match(/^(End|End Game)$/i);
+    });
 
     // Xử lý END (Đóng băng)
     if (isEnd) { setIsFrozen(true); return; }
@@ -318,7 +326,10 @@ export const useCharacter = (initialId, playSfx) => {
             const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
 
             // Bỏ qua các từ khóa điều khiển luồng trong vòng lặp con
-            if (cmd.match(/Repeat|Forever|End/i)) continue;
+            // FIX: Don't skip commands that might look like keywords but aren't (e.g. "Send")
+            // Strict check for control keywords
+            const isControl = cmd.match(/^(Repeat|Forever|End|End Game)/i);
+            if (isControl && !cmd.match(/Send|Sender/i)) continue;
 
             // XỬ LÝ LỆNH WAIT (FIX LỖI SỐ LẺ & HIỂN THỊ TIMER)
             if (waitMatch) {

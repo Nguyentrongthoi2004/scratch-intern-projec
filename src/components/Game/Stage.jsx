@@ -118,13 +118,23 @@ const Stage = ({
   const moveDuration = `${0.6 / speed}s`;
 
   // --- STYLE CHÍNH CỦA NHÂN VẬT ---
-  const characterStyle = useMemo(() => ({
-    top: '50%', left: '50%',
-    transition: isFrozen ? 'none' : `transform ${moveDuration} cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease`,
-    transform: `translate3d(-50%, -100%, 0) translate3d(${x}px, ${y * -1}px, 0) scale3d(${cssScaleX * (visible ? scale : 0)}, ${visible ? scale : 0}, 1) ${cssRotation}`,
-    opacity: visible ? 1 : 0,
-    filter: status === 'teleport' ? 'brightness(200%) blur(5px)' : `drop-shadow(0 4px 6px rgba(0,0,0,0.3))` // Teleport visual
-  }), [x, y, cssScaleX, scale, visible, cssRotation, moveDuration, isFrozen, status]);
+  const characterStyle = useMemo(() => {
+    let baseTransform = `translate3d(-50%, -100%, 0) translate3d(${x}px, ${y * -1}px, 0) scale3d(${cssScaleX * (visible ? scale : 0)}, ${visible ? scale : 0}, 1) ${cssRotation}`;
+    let baseFilter = `drop-shadow(0 4px 6px rgba(0,0,0,0.3))`;
+
+    if (status === 'teleport') {
+        baseTransform += ` scale(0)`; // Thu nhỏ biến mất
+        baseFilter = `brightness(200%) blur(10px)`;
+    }
+
+    return {
+        top: '50%', left: '50%',
+        transition: isFrozen ? 'none' : `transform ${moveDuration} cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s ease`,
+        transform: baseTransform,
+        opacity: visible ? 1 : 0,
+        filter: baseFilter
+    };
+  }, [x, y, cssScaleX, scale, visible, cssRotation, moveDuration, isFrozen, status]);
 
   const friendStyle = useMemo(() => {
     if (!friend) return {};
@@ -136,6 +146,9 @@ const Stage = ({
     };
   }, [friend]);
 
+  // --- 4. CÁC HIỆU ỨNG VISUAL (OVERLAYS) ---
+
+  // FROZEN: Banner băng giá
   const freezeOverlay = isFrozen ? (
     <div className="absolute inset-0 z-[100] bg-cyan-900/40 backdrop-blur-[1px] flex flex-col items-center justify-center animate-fade-in mix-blend-hard-light">
         <div className="absolute inset-0 bg-[url('assets/images/ui/noise.svg')] opacity-20 pointer-events-none"></div>
@@ -145,30 +158,41 @@ const Stage = ({
     </div>
   ) : null;
 
-  // New Effects for Page and Stop
+  // PAGE FLASH: Nháy trắng màn hình
   const pageFlash = status === 'page' ? (
      <div className="absolute inset-0 z-[60] bg-white animate-flash pointer-events-none mix-blend-overlay"></div>
   ) : null;
 
-  // Teleport effect (Go Home)
-  const teleportFlash = status === 'teleport' ? (
-      <div className="absolute inset-0 z-[60] bg-cyan-400/30 animate-flash pointer-events-none"></div>
+  // TELEPORT (GO HOME): Cổng dịch chuyển
+  const teleportVisual = status === 'teleport' ? (
+      <>
+        <div className="absolute inset-0 z-[60] bg-cyan-400/20 animate-flash pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-4 border-cyan-400 rounded-full animate-spin-slow opacity-80 mix-blend-screen shadow-[0_0_50px_rgba(34,211,238,0.5)] z-0"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-white rounded-full animate-reverse-spin opacity-60 mix-blend-screen z-0"></div>
+      </>
   ) : null;
 
+  // STOP: Biển báo STOP đỏ (Distinct from Frozen)
   const stopOverlay = status === 'stop' ? (
-     <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none animate-fade-in">
-        <div className="w-32 h-32 bg-red-600 border-4 border-white shadow-[0_0_40px_rgba(220,38,38,0.8)] flex items-center justify-center transform rotate-12 animate-pop-in">
-            <span className="text-4xl font-black text-white uppercase">STOP</span>
+     <div className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center transform animate-bounce-in">
+             {/* Hình bát giác STOP */}
+             <div className="w-32 h-32 bg-red-600 flex items-center justify-center shadow-[0_10px_30px_rgba(220,38,38,0.6)] border-4 border-white" style={{ clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' }}>
+                 <span className="text-4xl font-black text-white uppercase">STOP</span>
+             </div>
+             {/* Chân cột (Optional) */}
+             <div className="w-4 h-32 mt-[-10px] bg-gray-400 border-x-4 border-gray-500 rounded-b-lg -z-10"></div>
         </div>
      </div>
   ) : null;
 
-  // Enhance Bump Effect: Shockwave
+  // BUMP: Sóng xung kích khi va chạm
   const bumpEffect = status === 'push' || status === 'throw' || status === 'bump' ? (
      <div className="absolute z-10 w-40 h-40 -translate-x-1/2 -translate-y-1/2 border-4 border-white rounded-full opacity-0 pointer-events-none top-1/2 left-1/2 animate-ping"></div>
   ) : null;
   
-  // --- TAP EFFECT ---
+  // TAP: Hiệu ứng gõ ngón tay
   const tapVisual = tapEffect ? (
       <div className="absolute z-50 w-32 h-32 -translate-x-1/2 -translate-y-1/2 border-8 border-yellow-300 rounded-full top-1/2 left-1/2 animate-ping opacity-80"></div>
   ) : null;
@@ -190,7 +214,7 @@ const Stage = ({
     `}>
       {freezeOverlay}
       {pageFlash}
-      {teleportFlash}
+      {teleportVisual}
       {stopOverlay}
       {bumpEffect}
       {tapVisual}
@@ -339,6 +363,11 @@ const Stage = ({
           0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
           20% { opacity: 1; transform: translate(10px, -10px) scale(1); }
           100% { transform: translate(60px, -60px) scale(0.8); opacity: 0; }
+        }
+        @keyframes bounce-in {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </div>
