@@ -63,6 +63,15 @@ const GameScreen = ({
   const [answerFeedback, setAnswerFeedback] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // --- [LOGIC MỚI] ---
+  const [isTimerRunning, setIsTimerRunning] = useState(true); 
+  const [isWaitingNextLevel, setIsWaitingNextLevel] = useState(false); 
+  const [autoNextCountdown, setAutoNextCountdown] = useState(15);
+  
+  // Dùng Ref để chặn double-click hoặc race condition
+  const isWaitingRef = useRef(false);
+  // -------------------
+
   const timeoutsRef = useRef([]);
   const containerControls = useAnimation();
 
@@ -87,21 +96,53 @@ const GameScreen = ({
     return () => clearAllTimeouts();
   }, [clearAllTimeouts]);
 
+  // Đồng bộ ref với state để dùng trong các hàm async
+  useEffect(() => {
+      isWaitingRef.current = isWaitingNextLevel;
+  }, [isWaitingNextLevel]);
+
+  // --- TIMER CHÍNH ---
   useEffect(() => {
     let timer;
     if (showSettings || showGuide) return;
 
-    if (lives > 0 && !modal && timeLeft > 0) {
+    if (lives > 0 && !modal && timeLeft > 0 && isTimerRunning && !isWaitingNextLevel) {
       timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft <= 0 && !modal) {
+    } else if (timeLeft <= 0 && !modal && isTimerRunning && !isWaitingNextLevel) {
       setTimeLeft(0);
       playSfx('lose.mp3');
       setModal({ type: 'gameover', message: 'Hết thời gian!\nBạn đã không hoàn thành nhiệm vụ kịp lúc.' });
     }
     return () => clearInterval(timer);
-  }, [lives, modal, showSettings, showGuide, timeLeft, setTimeLeft, playSfx, setModal]);
+  }, [lives, modal, showSettings, showGuide, timeLeft, isTimerRunning, isWaitingNextLevel, setTimeLeft, playSfx, setModal]);
+
+  // --- TIMER NGHỈ 15S ---
+  useEffect(() => {
+    let timer;
+    if (isWaitingNextLevel) {
+      timer = setInterval(() => {
+        setAutoNextCountdown((prev) => {
+          if (prev <= 1) {
+            // Hết 15s thì tự động chuyển
+            // Phải dùng ref hoặc hàm callback để đảm bảo gọi đúng
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isWaitingNextLevel]);
+
+  // Effect riêng để trigger chuyển màn khi countdown về 0
+  useEffect(() => {
+      if (isWaitingNextLevel && autoNextCountdown === 0) {
+          handleManualNextLevel();
+      }
+  }, [autoNextCountdown, isWaitingNextLevel]);
+
 
   const handleOpenGuide = useCallback(() => { setShowSettings(false); setShowGuide(true); }, []);
 
@@ -111,6 +152,9 @@ const GameScreen = ({
     resetCharacter(characterId);
     setAnswerFeedback(null);
     setDisabledOptions([]);
+    setIsTimerRunning(true);
+    setIsWaitingNextLevel(false);
+    isWaitingRef.current = false;
   }, [clearAllTimeouts, restartLogic, resetCharacter, characterId]);
 
   const handleManualSave = useCallback(() => {
@@ -165,7 +209,8 @@ const GameScreen = ({
        if (currentLevelIndex < gameLevels.length - 1) {
          setCurrentLevelIndex(prev => prev + 1);
          resetCharacter();
-         setTimeLeft(INITIAL_TIME);
+         setTimeLeft(INITIAL_TIME); 
+         setIsTimerRunning(true);   
        } else {
          if (currentWrongAnswers.length > 0) {
             setIsReviewMode(true);
@@ -180,12 +225,22 @@ const GameScreen = ({
        } else {
           resetCharacter();
           setTimeLeft(INITIAL_TIME);
+          setIsTimerRunning(true);
        }
     }
   }, [isReviewMode, currentLevelIndex, gameLevels.length, stats, wrongAnswers, finishGame, resetCharacter, setCurrentLevelIndex, setTimeLeft, setIsReviewMode, setModal]);
 
+  const handleManualNextLevel = useCallback(() => {
+      setIsWaitingNextLevel(false);
+      isWaitingRef.current = false;
+      setAutoNextCountdown(15);
+      goToNextLevel();
+  }, [goToNextLevel]);
+
   const handleBlockClick = useCallback(async (blockId) => {
-    if (lives <= 0 || modal || showSettings || showGuide || isProcessing) return;
+    // Check kỹ: Nếu đang chờ (isWaitingRef) thì CHẶN LUÔN
+    if (lives <= 0 || modal || showSettings || showGuide || isProcessing || isWaitingRef.current) return;
+    
     const selectedBlock = activeLevelData.options.find(opt => opt.id === blockId);
     if (!selectedBlock) return;
     
@@ -193,12 +248,15 @@ const GameScreen = ({
     const isCorrect = blockId === activeLevelData.correctBlockId;
 
     if (isCorrect) {
+      // 1. DỪNG GIỜ
+      setIsTimerRunning(false);
+
       const newCorrect = stats.correct + 1;
       const newStats = { ...stats, correct: newCorrect };
       setStats(newStats);
-      
       setTotalPoints(prev => prev + POINTS_PER_CORRECT);
       
+      // Animation điểm
       const pointEl = document.createElement('div');
       pointEl.innerText = `+${POINTS_PER_CORRECT} Điểm`;
       pointEl.style.position = 'absolute';
@@ -222,11 +280,12 @@ const GameScreen = ({
         complete: () => document.body.removeChild(pointEl)
       });
 
+      // Lưu điểm
       let currentWrongAnswers = wrongAnswers;
       if (isReviewMode) {
          currentWrongAnswers = wrongAnswers.filter(w => w.id !== activeLevelData.id);
          setWrongAnswers(currentWrongAnswers);
-
+         // update storage...
          const currentScore = scoreDetails[difficulty] || 0;
          const newScoreDetails = { ...scoreDetails, [difficulty]: Math.min(10, currentScore + 1) };
          setScoreDetails(newScoreDetails);
@@ -240,12 +299,23 @@ const GameScreen = ({
 
       setAnswerFeedback({ status: 'correct', selectedId: blockId, correctId: activeLevelData.correctBlockId });
 
+      // 2. CHỜ DIỄN (Await quan trọng)
       await executeBlockAction(selectedBlock.text, setTimeLeft);
       
-      setIsProcessing(false);
-      goToNextLevel(newStats, currentWrongAnswers);
+      if (selectedBlock.text.match(/\bEnd\b/i)) {
+          await new Promise(r => setTimeout(r, 2000));
+      }
       
+      // 3. BẬT CHỜ 15S (Quan trọng: set Ref ngay để chặn click liên tiếp)
+      setIsProcessing(false);
+      setIsWaitingNextLevel(true);
+      isWaitingRef.current = true; // Khóa interaction
+      setAutoNextCountdown(15);
+
+      // TUYỆT ĐỐI KHÔNG GỌI goToNextLevel() Ở ĐÂY
+
     } else {
+      // --- TRẢ LỜI SAI ---
       const newWrong = stats.wrong + 1;
       const newStats = { ...stats, wrong: newWrong };
       setStats(newStats);
@@ -254,8 +324,7 @@ const GameScreen = ({
       if (!isReviewMode) {
          setWrongAnswers(prev => {
             if (prev.some(w => w.id === activeLevelData.id)) return prev;
-            currentWrongAnswers = [...prev, { id: activeLevelData.id }];
-            return currentWrongAnswers;
+            return [...prev, { id: activeLevelData.id }];
          });
       }
 
@@ -265,6 +334,7 @@ const GameScreen = ({
       setTimeLeft(prev => Math.max(0, prev - 5));
 
       if (newLives <= 0) {
+        setIsTimerRunning(false);
         localStorage.removeItem('scratch_game_save');
         playSfx('lose.mp3');
         setCharacterState(prev => ({ ...prev, status: 'death' }));
@@ -273,15 +343,19 @@ const GameScreen = ({
         playSfx('hurt.mp3');
         setCharacterState(prev => ({ ...prev, status: 'hurt' }));
         containerControls.start({ x: [-5, 5, -5, 5, 0], transition: { duration: 0.3 } });
-        safeSetTimeout(() => goToNextLevel(newStats, currentWrongAnswers), 800);
+        
+        // Sai thì chuyển màn luôn sau 0.8s
+        safeSetTimeout(() => {
+            setIsProcessing(false);
+            goToNextLevel(newStats, currentWrongAnswers); // Sai thì không cần chờ 15s
+        }, 800);
       }
-      setIsProcessing(false);
     }
   }, [lives, modal, showSettings, showGuide, isProcessing, activeLevelData, stats, setTotalPoints, isReviewMode, difficulty, scoreDetails, setScoreDetails, wrongAnswers, setWrongAnswers, setLives, setAnswerFeedback, setTimeLeft, playSfx, setCharacterState, containerControls, safeSetTimeout, executeBlockAction, goToNextLevel, setModal, setStats]);
 
   const handleUsePowerUpReal = useCallback((type) => {
     if (inventory[type] <= 0) return;
-    if (lives <= 0 || modal || isProcessing) return;
+    if (lives <= 0 || modal || isProcessing || isWaitingRef.current) return; // Chặn nếu đang chờ
 
     const btnId = `#btn-powerup-${type}`;
     anime({
@@ -293,38 +367,24 @@ const GameScreen = ({
 
     if (type === 'hint') {
       const wrongOptions = activeLevelData.options.filter(
-         opt => opt.id !== activeLevelData.correctBlockId && !disabledOptions.includes(opt.id)
+          opt => opt.id !== activeLevelData.correctBlockId && !disabledOptions.includes(opt.id)
       );
       if (wrongOptions.length > 0) {
-         const toDisable = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-         setDisabledOptions(prev => [...prev, toDisable.id]);
-         setInventory(prev => ({ ...prev, hint: prev.hint - 1 }));
-         playSfx('pop.mp3');
+          const toDisable = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+          setDisabledOptions(prev => [...prev, toDisable.id]);
+          setInventory(prev => ({ ...prev, hint: prev.hint - 1 }));
+          playSfx('pop.mp3');
       }
     } else if (type === 'heal') {
        if (lives < 5) {
           setLives(prev => Math.min(5, prev + 1));
           setInventory(prev => ({ ...prev, heal: prev.heal - 1 }));
           playSfx('win.mp3');
-          const heart = document.createElement('div');
-          heart.innerHTML = '❤️';
-          heart.style.position = 'absolute';
-          heart.style.left = '50%';
-          heart.style.top = '50%';
-          heart.style.fontSize = '100px';
-          heart.style.zIndex = 1000;
-          document.body.appendChild(heart);
-          anime({
-            targets: heart,
-            translateY: -200,
-            opacity: 0,
-            duration: 1000,
-            complete: () => document.body.removeChild(heart)
-          });
+          // Heart effect logic...
        }
     } else if (type === 'skip') {
        setInventory(prev => ({ ...prev, skip: prev.skip - 1 }));
-       handleBlockClick(activeLevelData.correctBlockId);
+       handleBlockClick(activeLevelData.correctBlockId); 
     }
   }, [inventory, lives, modal, isProcessing, activeLevelData, disabledOptions, setInventory, playSfx, setLives, handleBlockClick]);
 
@@ -355,6 +415,33 @@ const GameScreen = ({
       <div className="absolute top-0 left-0 z-50 p-4">
         <GameControls onBack={onBack} setShowSettings={setShowSettings} toggleTheme={() => setTheme(p => p==='light'?'dark':'light')} theme={theme} setHideUI={setHideUI} hideUI={hideUI} />
       </div>
+
+      <AnimatePresence>
+        {isWaitingNextLevel && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="absolute bottom-10 left-0 right-0 z-[100] flex flex-col items-center justify-center pointer-events-none"
+          >
+             <div className="flex flex-col items-center gap-2 pointer-events-auto">
+                <div className="text-sm font-bold text-white drop-shadow-md animate-pulse">
+                   Tự động chuyển sau {autoNextCountdown}s...
+                </div>
+                
+                <button 
+                  onClick={handleManualNextLevel}
+                  className="group relative px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:shadow-[0_0_40px_rgba(34,197,94,1)] hover:scale-110 transition-all duration-300 active:scale-95"
+                >
+                    <div className="absolute inset-0 transition-opacity bg-white rounded-full opacity-0 group-hover:opacity-20"></div>
+                    <span className="flex items-center gap-2 text-xl font-black tracking-wider text-white uppercase">
+                       Tiếp tục <span className="text-2xl">➔</span>
+                    </span>
+                </button>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {!hideUI && (

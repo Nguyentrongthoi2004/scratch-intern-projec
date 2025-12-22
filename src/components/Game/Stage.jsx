@@ -14,7 +14,9 @@ const CHAR_CONFIG = {
     say:    { fileName: 'Pink_Monster_Attack1_4.png', frames: 4 },
     throw:  { fileName: 'Pink_Monster_Throw_4.png', frames: 4 },
     push:   { fileName: 'Pink_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
-    flag:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 }
+    flag:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 },
+    // Dùng ảnh Idle cho Turn (xoay)
+    turn:   { fileName: 'Pink_Monster_Idle_4.png', frames: 4 }
   },
   dude: {
     idle:   { fileName: 'Dude_Monster_Idle_4.png', frames: 4 },
@@ -26,7 +28,8 @@ const CHAR_CONFIG = {
     say:    { fileName: 'Dude_Monster_Attack1_4.png', frames: 4 },
     throw:  { fileName: 'Dude_Monster_Throw_4.png', frames: 4 },
     push:   { fileName: 'Dude_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
-    flag:   { fileName: 'Dude_Monster_Idle_4.png', frames: 4 }
+    flag:   { fileName: 'Dude_Monster_Idle_4.png', frames: 4 },
+    turn:   { fileName: 'Dude_Monster_Idle_4.png', frames: 4 }
   },
   owlet: {
     idle:   { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 },
@@ -38,7 +41,8 @@ const CHAR_CONFIG = {
     say:    { fileName: 'Owlet_Monster_Attack1_4.png', frames: 4 },
     throw:  { fileName: 'Owlet_Monster_Throw_4.png', frames: 4 },
     push:   { fileName: 'Owlet_Monster_Push_6.png', frames: 6, dust: 'Walk_Run_Push_Dust_6.png' },
-    flag:   { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 }
+    flag:   { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 },
+    turn:   { fileName: 'Owlet_Monster_Idle_4.png', frames: 4 }
   }
 };
 
@@ -66,22 +70,31 @@ const Stage = ({
   x, y, rotation, status, characterId, speechText, 
   visible = true, scale = 1, speed = 1, 
   waitTimer, friend, messageColor,
-  activeLoopType, repeatProgress, isFrozen = false
+  activeLoopType, repeatProgress, isFrozen = false,
+  tapEffect // Nhận prop tapEffect
 }) => {
   const safeId = characterId || 'pink';
   const lastPlayedText = useRef('');
   const currentConfig = CHAR_CONFIG[safeId] || CHAR_CONFIG.pink;
+  
+  // Nếu status là 'turn' nhưng không cấu hình, fallback về idle
   const animData = currentConfig[status] || currentConfig.idle;
   
   const normalizedRot = ((rotation % 360) + 360) % 360;
+  // Logic facing: Nếu góc từ 90 đến 270 thì lật ngược ảnh (scaleX -1)
   const isFacingLeft = normalizedRot > 90 && normalizedRot < 270;
 
+  // Xoay toàn bộ khung hình
   let cssRotation = `rotate(${rotation - 90}deg)`;
-  let cssScaleX = 1;
-  if (isFacingLeft) {
-      cssScaleX = 1; // Rotation handles direction
-  }
-
+  
+  // Logic lật hình:
+  // Nếu status là Turn -> Không lật (vì Turn xoay cả khung div)
+  // Nếu status khác -> Lật scaleX(-1) nếu facing left
+  let cssScaleX = 1; 
+  // (Lưu ý: Logic rotate ở trên div cha đã xử lý việc xoay, 
+  // nhưng nếu bạn muốn lật gương ảnh khi đi trái phải theo trục dọc thì xử lý ở đây)
+  // Trong code này ta đang xoay cả div cha, nên scaleX giữ nguyên là 1
+  
   const isThinking = useMemo(() => {
     if (!speechText) return false;
     return speechText.includes('...') || speechText === 'Zzz' || speechText === 'Hmm' || speechText.startsWith('(');
@@ -147,14 +160,19 @@ const Stage = ({
   const stopOverlay = status === 'stop' ? (
      <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none animate-fade-in">
         <div className="w-32 h-32 bg-red-600 border-4 border-white shadow-[0_0_40px_rgba(220,38,38,0.8)] flex items-center justify-center transform rotate-12">
-            <span className="text-white text-4xl font-black uppercase">STOP</span>
+            <span className="text-4xl font-black text-white uppercase">STOP</span>
         </div>
      </div>
   ) : null;
 
   // Enhance Bump Effect: Shockwave
-  const bumpEffect = status === 'push' || status === 'throw' ? (
-     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 border-4 border-white rounded-full animate-ping opacity-0 pointer-events-none z-10"></div>
+  const bumpEffect = status === 'push' || status === 'throw' || status === 'bump' ? (
+     <div className="absolute z-10 w-40 h-40 -translate-x-1/2 -translate-y-1/2 border-4 border-white rounded-full opacity-0 pointer-events-none top-1/2 left-1/2 animate-ping"></div>
+  ) : null;
+  
+  // --- TAP EFFECT ---
+  const tapVisual = tapEffect ? (
+      <div className="absolute z-50 w-20 h-20 -translate-x-1/2 -translate-y-1/2 border-4 border-yellow-400 rounded-full top-1/2 left-1/2 animate-ping"></div>
   ) : null;
 
   // Determine message envelope color class
@@ -170,12 +188,13 @@ const Stage = ({
 
   return (
     <div className={`relative w-full h-full overflow-hidden border-4 border-slate-700 bg-slate-900 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-2xl font-mono 
-        ${status === 'hurt' || status === 'push' ? 'animate-shake-impact' : ''}
+        ${status === 'hurt' || status === 'push' || status === 'bump' ? 'animate-shake-impact' : ''}
     `}>
       {freezeOverlay}
       {pageFlash}
       {stopOverlay}
       {bumpEffect}
+      {tapVisual}
 
       <div className="absolute inset-0 pointer-events-none">
         <div className="w-full h-full" style={{ backgroundImage: 'linear-gradient(rgba(56,189,248,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -214,7 +233,7 @@ const Stage = ({
         </div>
       )}
 
-      {(status === 'hurt' || status === 'push') && (
+      {(status === 'hurt' || status === 'push' || status === 'bump') && (
         <img src={`assets/images/characters/${safeId}/Rock1.png`} className="absolute z-0 w-12 h-12 top-1/2 left-1/2 pixelated opacity-90" style={{ transform: `translate(30px, -20px)` }} alt="Obstacle" />
       )}
 
@@ -288,7 +307,7 @@ const Stage = ({
         {speechText && visible && (
           <div className="absolute z-30 -translate-x-1/2 -top-16 left-1/2" style={{ transform: isFacingLeft ? 'scaleX(-1)' : 'none' }}>
             <div className={`relative px-4 py-2 text-xs font-bold text-cyan-950 ${bubbleBgColor} border-2 ${bubbleBorderColor} ${isThinking ? 'rounded-[20px]' : 'rounded-lg'} shadow-[0_0_15px_rgba(34,211,238,0.5)] min-w-[80px] text-center whitespace-nowrap animate-pop-in`}>
-              {speechText === 'Grrr' ? <span className="text-lg font-black text-red-600 uppercase tracking-widest shake">GRRR!</span> : speechText}
+              {speechText === 'Grrr' ? <span className="text-lg font-black tracking-widest text-red-600 uppercase shake">GRRR!</span> : speechText}
               {isThinking ? (
                  <>
                    <div className={`absolute -bottom-2 left-6 w-2 h-2 ${bubbleBgColor} border ${bubbleBorderColor} rounded-full`}></div>
