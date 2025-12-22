@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { levels } from '../data/levels';
 import { INITIAL_TIME } from '../utils/gameConstants';
 
@@ -97,7 +97,7 @@ export const useGameLogic = (difficulty, loadGame, activeCharacterId) => {
      };
   }, [currentLevelIndex, lives, scoreDetails, wrongAnswers, difficulty, activeCharacterId, stats, gameLevels, levelOrder, modal]);
 
-  const saveGame = () => {
+  const saveGame = useCallback(() => {
       if (gameLevels.length > 0) {
         const saveData = {
               difficulty,
@@ -113,9 +113,9 @@ export const useGameLogic = (difficulty, loadGame, activeCharacterId) => {
         return true;
       }
       return false;
-  };
+  }, [gameLevels, difficulty, activeCharacterId, currentLevelIndex, lives, scoreDetails, wrongAnswers, stats, levelOrder]);
 
-  const restartGame = () => {
+  const restartGame = useCallback(() => {
     setRefreshKey(prev => prev + 1);
     setCurrentLevelIndex(0);
     setLives(5);
@@ -123,7 +123,7 @@ export const useGameLogic = (difficulty, loadGame, activeCharacterId) => {
     setStats({ correct: 0, wrong: 0, total: gameLevels.length });
     setTimeLeft(INITIAL_TIME);
     setIsReviewMode(false);
-  };
+  }, [gameLevels.length]);
 
   return {
     currentLevelIndex, setCurrentLevelIndex,

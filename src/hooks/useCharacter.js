@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { GRID_SIZE, MAX_X, MAX_Y, MIN_X, MIN_Y } from '../utils/gameConstants';
 
 // Helper for sleep
@@ -27,34 +27,28 @@ export const useCharacter = (initialId, playSfx) => {
 
   const timeoutsRef = useRef([]);
 
-  const safeSetTimeout = (callback, delay) => {
+  const safeSetTimeout = useCallback((callback, delay) => {
     const id = setTimeout(() => {
       timeoutsRef.current = timeoutsRef.current.filter(tId => tId !== id);
       callback();
     }, delay);
     timeoutsRef.current.push(id);
     return id;
-  };
+  }, []);
 
-  const safeSetInterval = (callback, delay) => {
-    const id = setInterval(callback, delay);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
-  const clearAllTimeouts = () => {
+  const clearAllTimeouts = useCallback(() => {
     timeoutsRef.current.forEach(id => {
       clearTimeout(id);
       clearInterval(id);
     });
     timeoutsRef.current = [];
-  };
+  }, []);
 
   useEffect(() => {
     return () => clearAllTimeouts();
-  }, []);
+  }, [clearAllTimeouts]);
 
-  const resetCharacter = (resetId = null) => {
+  const resetCharacter = useCallback((resetId = null) => {
     clearAllTimeouts();
     setCharacterState({
       x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, speechText: null, speed: 1, waitTimer: null, isWaiting: false, friend: null
@@ -63,16 +57,16 @@ export const useCharacter = (initialId, playSfx) => {
     setRepeatProgress(null);
     setIsFrozen(false);
     if (resetId) setActiveCharacterId(resetId);
-  };
+  }, [clearAllTimeouts]);
 
-  const getRandomCharacter = (excludeId) => {
+  const getRandomCharacter = useCallback((excludeId) => {
     const chars = ['pink', 'dude', 'owlet'];
     const available = chars.filter(c => c !== excludeId);
     return available[Math.floor(Math.random() * available.length)];
-  };
+  }, []);
 
   // Process single command (updates state immediately)
-  const processSingleCommand = (cmd) => {
+  const processSingleCommand = useCallback((cmd) => {
     const command = cmd.trim();
     let actionStatus = 'idle';
 
@@ -179,10 +173,10 @@ export const useCharacter = (initialId, playSfx) => {
 
     if (command.match(/Fast|Slow|Hide|Show|Grow|Shrink|Reset|Color|Change/i)) return 'current';
     return actionStatus;
-  };
+  }, [initialId, playSfx, activeCharacterId, getRandomCharacter, safeSetTimeout]);
 
   // Async Execution
-  const executeBlockAction = async (fullBlockText, setTimeLeft) => {
+  const executeBlockAction = useCallback(async (fullBlockText, setTimeLeft) => {
     const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
 
     // Check for Loop/Control commands first
@@ -222,8 +216,6 @@ export const useCharacter = (initialId, playSfx) => {
         const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
 
         if (cmd.match(/Repeat|Forever|End/i)) {
-            // These don't block the sequence in this simplified interpreter
-            // They run in parallel visually (see above) or are instantaneous
             continue;
         }
 
@@ -233,7 +225,7 @@ export const useCharacter = (initialId, playSfx) => {
 
             setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
 
-            // Visual countdown for wait (approximate)
+            // Visual countdown for wait
             if (setTimeLeft) {
                 const stepInterval = 100;
                 const steps = (secsToWait * 1000) / stepInterval;
@@ -266,7 +258,7 @@ export const useCharacter = (initialId, playSfx) => {
 
     // Reset status after sequence
     setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null }));
-  };
+  }, [processSingleCommand, safeSetTimeout]);
 
   return {
       activeCharacterId, setActiveCharacterId,
