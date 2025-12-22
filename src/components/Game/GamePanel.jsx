@@ -20,6 +20,8 @@ const GamePanel = React.memo(({
   const isDark = theme === 'dark';
   const isInFeedback = !!answerFeedback;
 
+  const [showHint, setShowHint] = React.useState(false);
+
   // Khung tablet ngoài – viền gradient + shadow
   const frameShadow = isDark
     ? 'shadow-[0_18px_45px_rgba(0,0,0,0.75)]'
@@ -177,13 +179,20 @@ const GamePanel = React.memo(({
                 </p>
               </div>
 
-              <p
-                className={`mt-2 ml-1 flex items-center gap-2 text-[11px] font-medium opacity-75 ${currentTheme.textSub}`}
-              >
-                <span className="text-yellow-400 animate-pulse">💡</span>
-                {currentLevel.hint ||
-                  'Gợi ý: Hãy quan sát kỹ đường đi của nhân vật trước khi chọn block.'}
-              </p>
+              <div className="mt-2 ml-1 flex items-start gap-2">
+                 <button
+                    onClick={() => setShowHint(prev => !prev)}
+                    className="px-2 py-0.5 rounded border border-yellow-500/30 bg-yellow-500/10 text-[10px] text-yellow-300 hover:bg-yellow-500/20 transition"
+                 >
+                    {showHint ? 'HIDE HINT' : 'SHOW HINT'}
+                 </button>
+                 {showHint && (
+                    <p className={`text-[11px] font-medium opacity-75 ${currentTheme.textSub}`}>
+                        <span className="text-yellow-400 animate-pulse mr-1">💡</span>
+                        {currentLevel.hint || 'Gợi ý: Hãy quan sát kỹ đường đi của nhân vật trước khi chọn block.'}
+                    </p>
+                 )}
+              </div>
             </div>
 
             {/* DANH SÁCH BLOCK */}

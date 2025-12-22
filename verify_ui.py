@@ -1,38 +1,45 @@
 from playwright.sync_api import sync_playwright
-import time
 
 def verify_ui():
+    print("Navigating to app...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # 1. Navigate to App
-        print("Navigating to app...")
-        page.goto("http://localhost:5173")
-        page.wait_for_timeout(3000) # Wait for load
+        # Go to app
+        page.goto("http://localhost:5173/scratch-intern-projec/")
+        page.wait_for_timeout(3000)
 
-        # Take screenshot of Main Menu
-        print(" capturing Main Menu...")
-        page.screenshot(path="verification_main_menu.png")
+        # Click "BẮT ĐẦU MỚI"
+        try:
+            print("Clicking BẮT ĐẦU MỚI...")
+            page.get_by_text("BẮT ĐẦU MỚI").click()
+            page.wait_for_timeout(2000)
 
-        # 2. Verify Leaderboard
-        print("Clicking Leaderboard...")
-        # Button text "Bảng xếp hạng"
-        page.get_by_text("Bảng xếp hạng").click()
-        page.wait_for_timeout(2000)
-        print(" capturing Leaderboard...")
-        page.screenshot(path="verification_leaderboard.png")
+            # Character Select Screen - Click PINKY
+            print("Clicking PINKY...")
+            page.get_by_text("PINKY").click()
+            page.wait_for_timeout(2000)
 
-        # Go back (reload to be safe)
-        page.goto("http://localhost:5173")
-        page.wait_for_timeout(2000)
+            # Now Difficulty Select?
+            print("Dumping text after Char Select:", page.inner_text("body"))
+            page.screenshot(path="verification_difficulty.png")
 
-        # 3. Verify Settings
-        print("Clicking Settings...")
-        page.get_by_text("Cài đặt").click()
-        page.wait_for_timeout(2000)
-        print(" capturing Settings...")
-        page.screenshot(path="verification_settings.png")
+            # Try Clicking EASY
+            if page.get_by_text("EASY").count() > 0:
+                page.get_by_text("EASY").click()
+                page.wait_for_timeout(2000)
+
+                # Now Level Select
+                print("Clicking Level 1...")
+                page.get_by_text("1", exact=True).first.click()
+                page.wait_for_timeout(3000)
+
+                print("Taking final screenshot...")
+                page.screenshot(path="verification_game_final.png")
+
+        except Exception as e:
+            print(f"Error: {e}")
 
         browser.close()
 

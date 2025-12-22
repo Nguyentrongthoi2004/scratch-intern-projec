@@ -423,6 +423,7 @@ const GameScreen = ({
             sfxVolume={sfxVolume}
             setSfxVolume={setSfxVolume}
             onSaveGame={handleManualSave}
+            onResetGame={restartGame}
           />
         )}
         {modal && !showSettings && (

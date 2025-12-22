@@ -117,7 +117,8 @@ const SettingsModal = ({
   onOpenGuide,
   bgmVolume = 50, setBgmVolume = () => {}, 
   sfxVolume = 50, setSfxVolume = () => {},
-  onSaveGame // New Prop
+  onSaveGame, // New Prop
+  onResetGame // New Prop
 }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [mounted, setMounted] = useState(false);
@@ -245,20 +246,36 @@ const SettingsModal = ({
                                 <p className="text-[10px] text-yellow-500/80 font-mono">⚠ Note: Zoom feature disabled for UI consistency.</p>
                            </div>
 
-                           {/* MANUAL SAVE BUTTON */}
-                           {onSaveGame && (
-                             <div className="mt-6">
-                                <button
-                                  onClick={onSaveGame}
-                                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 text-white font-bold uppercase tracking-[0.15em] shadow-lg shadow-emerald-900/40 border border-emerald-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
-                                >
-                                    <span>💾</span> SAVE GAME PROGRESS
-                                </button>
-                                <p className="mt-2 text-[9px] text-center text-slate-500">
-                                    Dữ liệu game sẽ được lưu vào trình duyệt.
-                                </p>
-                             </div>
-                           )}
+                           {/* MANUAL SAVE BUTTON & RESET */}
+                           <div className="flex gap-4 mt-6">
+                             {onSaveGame && (
+                                <div className="flex-1">
+                                    <button
+                                      onClick={onSaveGame}
+                                      className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 text-white font-bold uppercase tracking-[0.15em] shadow-lg shadow-emerald-900/40 border border-emerald-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+                                    >
+                                        <span>💾</span> SAVE
+                                    </button>
+                                    <p className="mt-2 text-[9px] text-center text-slate-500">Save Progress</p>
+                                </div>
+                             )}
+                             {onResetGame && (
+                                <div className="flex-1">
+                                    <button
+                                      onClick={() => {
+                                          if(window.confirm('Bạn có chắc chắn muốn chơi lại từ đầu?')) {
+                                              onResetGame();
+                                              onClose();
+                                          }
+                                      }}
+                                      className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white font-bold uppercase tracking-[0.15em] shadow-lg shadow-rose-900/40 border border-rose-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+                                    >
+                                        <span>↺</span> REFRESH
+                                    </button>
+                                    <p className="mt-2 text-[9px] text-center text-slate-500">Reset Game</p>
+                                </div>
+                             )}
+                           </div>
 
                          </div>
                        </div>
