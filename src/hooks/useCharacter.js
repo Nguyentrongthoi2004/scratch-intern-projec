@@ -35,6 +35,8 @@ export const useCharacter = (initialId, playSfx) => {
   const [isFrozen, setIsFrozen] = useState(false);
 
   const timeoutsRef = useRef([]);
+  // [MỚI] Ref này dùng để ngắt vòng lặp ngay lập tức khi bấm Stop/Reset
+  const isRunningRef = useRef(false);
 
   // --- QUẢN LÝ TIMER ---
   const safeSetTimeout = useCallback((callback, delay) => {
@@ -57,6 +59,9 @@ export const useCharacter = (initialId, playSfx) => {
 
   // --- RESET GAME ---
   const resetCharacter = useCallback((resetId = null) => {
+    // [QUAN TRỌNG] Gạt cần xuống false để ngắt mọi vòng lặp đang chạy ngầm
+    isRunningRef.current = false;
+    
     clearAllTimeouts();
     setCharacterState({
       x: 0, y: 0, rotation: 90, status: 'idle', visible: true, scale: 1, 
@@ -284,106 +289,107 @@ export const useCharacter = (initialId, playSfx) => {
 
   }, [initialId, playSfx, activeCharacterId, getRandomCharacter, safeSetTimeout]);
 
-  // --- HÀM CHẠY CHUỖI LỆNH (EXECUTION LOOP) ---
+  // --- HÀM CHẠY CHUỖI LỆNH (EXECUTION LOOP ĐÃ NÂNG CẤP) ---
   const executeBlockAction = useCallback(async (fullBlockText, setTimeLeft) => {
-    const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
+    // 1. Kích hoạt trạng thái chạy
+    isRunningRef.current = true;
+    setIsFrozen(false);
 
+    const actions = fullBlockText.split(/\s*->\s*|\n/).filter(s => s.trim() !== '');
     const repeatMatch = fullBlockText.match(/Repeat (\d+)/i);
     const isForever = fullBlockText.match(/Forever/i);
 
-    // STRICT END DETECTION: Iterate actions to find exact match
+    // STRICT END DETECTION
     const isEnd = actions.some(action => {
        const clean = action.replace(/[\[\]]/g, '').trim();
-       // Match "End" or "End Game" exactly, case insensitive
        return clean.match(/^(End|End Game)$/i);
     });
 
-    // Xử lý END (Đóng băng)
     if (isEnd) { setIsFrozen(true); return; }
 
-    let loopCount = 1;
+    // Xác định số lần lặp
+    let maxLoops = 1;
+    let currentLoop = 0;
+
     if (isForever) {
-       // Forever lặp lại nhiều lần (giả lập vô tận cho đến khi hết time)
-       loopCount = 999;
+       maxLoops = Infinity; // Chạy vô tận (nhưng có thể break)
        setActiveLoopType('forever');
     } else if (repeatMatch) {
-       loopCount = parseInt(repeatMatch[1]);
+       maxLoops = parseInt(repeatMatch[1]);
        setActiveLoopType('repeat');
-       setRepeatProgress({ current: 0, total: loopCount });
+       setRepeatProgress({ current: 0, total: maxLoops });
     }
 
-    // VÒNG LẶP CHÍNH
-    for (let i = 0; i < loopCount; i++) {
-        // Nếu bị đóng băng giữa chừng (do Stop/End ở đâu đó), break
-        if (isFrozen) break;
+    // --- VÒNG LẶP CHÍNH (WHILE) ---
+    while (currentLoop < maxLoops) {
+       // [CHECK 1]: Nếu bị Stop bên ngoài hoặc gặp lệnh End -> Dừng ngay
+       if (!isRunningRef.current || isFrozen) break;
 
-        if (repeatMatch) {
-            setRepeatProgress({ current: i + 1, total: loopCount });
-        }
+       currentLoop++;
+       if (repeatMatch) {
+           setRepeatProgress({ current: currentLoop, total: maxLoops });
+       }
 
-        for (const cmd of actions) {
-            let duration = 600;
-            const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
+       // Lặp qua từng lệnh con
+       for (const cmd of actions) {
+           // [CHECK 2]: Kiểm tra Stop giữa các hành động
+           if (!isRunningRef.current) break;
 
-            // Bỏ qua các từ khóa điều khiển luồng trong vòng lặp con
-            // FIX: Don't skip commands that might look like keywords but aren't (e.g. "Send")
-            // Strict check for control keywords
-            const isControl = cmd.match(/^(Repeat|Forever|End|End Game)/i);
-            if (isControl && !cmd.match(/Send|Sender/i)) continue;
+           let duration = 600;
+           const waitMatch = cmd.match(/Wait(?: (\d+))?/i);
+           const isControl = cmd.match(/^(Repeat|Forever|End|End Game)/i);
+           if (isControl && !cmd.match(/Send|Sender/i)) continue;
 
-            // XỬ LÝ LỆNH WAIT (FIX LỖI SỐ LẺ & HIỂN THỊ TIMER)
-            if (waitMatch) {
-                const secsToWait = parseInt(waitMatch[1] || '1');
-                duration = 1000;
-                setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
-                
-                // Hiển thị countdown timer cục bộ
-                for (let s = secsToWait; s > 0; s--) {
-                     setCharacterState(prev => ({ ...prev, waitTimer: s }));
-                     await sleep(1000); // Wait 1s
-                }
-                setCharacterState(prev => ({ ...prev, waitTimer: null, isWaiting: false }));
-            } else {
-                // XỬ LÝ CÁC LỆNH KHÁC
-                if (cmd.match(/Hop|Jump/i)) duration = 700;
-                if (cmd.match(/Say|Think/i)) duration = 1500;
-                if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
+           // XỬ LÝ LỆNH WAIT (An toàn với Stop)
+           if (waitMatch) {
+               const secsToWait = parseInt(waitMatch[1] || '1');
+               duration = 1000;
+               setCharacterState(prev => ({ ...prev, isWaiting: true, status: 'idle' }));
+               
+               // Đếm ngược từng giây và check stop liên tục
+               for (let s = secsToWait; s > 0; s--) {
+                    if (!isRunningRef.current) break; // Thoát ngay nếu bấm Stop
+                    setCharacterState(prev => ({ ...prev, waitTimer: s }));
+                    await sleep(1000);
+               }
+               setCharacterState(prev => ({ ...prev, waitTimer: null, isWaiting: false }));
+           } else {
+               // XỬ LÝ LỆNH KHÁC
+               if (cmd.match(/Hop|Jump/i)) duration = 700;
+               if (cmd.match(/Say|Think/i)) duration = 1500;
+               if (cmd.match(/Pop|Hide|Show|Fast|Slow/i)) duration = 400;
+               if (cmd.match(/Friend|Message|Send/i)) duration = 1200;
+               if (cmd.match(/Receive/i)) duration = 600;
+               if (cmd.match(/Bump|Stop|Page|Tap/i)) duration = 1000;
+               if (cmd.match(/Go Home/i)) duration = 1000;
 
-                // Tăng duration cho Send để thấy hiệu ứng
-                if (cmd.match(/Friend|Message|Send/i)) duration = 1200;
-                // Giảm duration cho Receive để nó chuyển qua lệnh Move nhanh hơn nếu cần
-                if (cmd.match(/Receive/i)) duration = 600;
+               const newStatus = processSingleCommand(cmd);
+               if (newStatus !== 'current') {
+                   setCharacterState(prev => ({ ...prev, status: newStatus }));
+               }
 
-                if (cmd.match(/Bump|Stop|Page|Tap/i)) duration = 1000;
-                if (cmd.match(/Go Home/i)) duration = 1000;
-
-                const newStatus = processSingleCommand(cmd);
-                
-                // Cập nhật status
-                if (newStatus !== 'current') {
-                    setCharacterState(prev => ({ ...prev, status: newStatus }));
-                }
-
-                // Nếu là Stop, giữ trạng thái lâu hơn tí
-                if (newStatus === 'stop') {
-                    await sleep(1500);
-                } else {
-                    await sleep(duration);
-                }
-                
-                // Sau khi xong hành động, reset về trạng thái thường
-                setCharacterState(prev => ({ ...prev, tapEffect: false }));
-            }
-        }
-        // Nghỉ một chút giữa các vòng lặp
-        if (loopCount > 1 && i < loopCount - 1) await sleep(300);
+               if (newStatus === 'stop') {
+                   await sleep(1500);
+               } else {
+                   await sleep(duration);
+               }
+               
+               setCharacterState(prev => ({ ...prev, tapEffect: false }));
+           }
+       }
+       // Nghỉ 1 xíu giữa các vòng lặp lớn
+       if (maxLoops > 1) await sleep(300);
     }
 
     // Kết thúc chuỗi lệnh
+    isRunningRef.current = false; // Tắt trạng thái chạy
     setActiveLoopType(null);
     setRepeatProgress(null);
-    // Reset status về idle nếu không phải End/Stop
-    setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null, messageColor: null, waitTimer: null }));
+    
+    // Reset về idle nếu không bị Frozen (End Game)
+    if (!isFrozen) {
+        setCharacterState(prev => ({ ...prev, status: 'idle', speechText: null, messageColor: null, waitTimer: null }));
+    }
   }, [processSingleCommand, safeSetTimeout, isFrozen]);
 
   return {
